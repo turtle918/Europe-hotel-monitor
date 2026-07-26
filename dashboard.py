@@ -52,11 +52,16 @@ DB_PATH = str(Path(__file__).parent / "booking_data.db")
 def load_data(db_path: str) -> pd.DataFrame:
     """从 SQLite 读取全部酒店记录，返回 DataFrame"""
     if not Path(db_path).exists():
-        st.error(f"❌ 数据库文件不存在: {db_path}")
         return pd.DataFrame()
 
     conn = sqlite3.connect(db_path)
     try:
+        # 检查 hotels 表是否存在
+        cursor = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='hotels'"
+        )
+        if cursor.fetchone() is None:
+            return pd.DataFrame()
         df = pd.read_sql_query("SELECT * FROM hotels ORDER BY id DESC", conn)
     finally:
         conn.close()
@@ -238,7 +243,10 @@ st.sidebar.caption(f"旅行城市: {len(CONFIG_CITIES)} 个")
 # ==================== 数据过滤 ====================
 
 if df.empty:
-    st.warning("⚠️ 数据库中暂无数据，请先运行 booking_scraper.py 抓取数据。")
+    if not Path(DB_PATH).exists():
+        st.info("🏨 系统正在等待首次数据抓取，请稍后刷新查看最新房源。")
+    else:
+        st.info("🏨 数据库中暂无数据，系统正在等待首次数据抓取，请稍后刷新查看最新房源。")
     st.stop()
 
 mask = pd.Series(True, index=df.index)
