@@ -7,6 +7,7 @@ V4 更新：
   - 新增 location_score 列（位置评分）
   - 新增 distance_to_centre 列（距市中心距离 / 地理位置描述）
   - 自动迁移旧数据库结构
+  - checkin 列为入住日期，checkout 列为退房日期
 """
 
 import logging
@@ -49,6 +50,8 @@ def init_db(db_path: str = "booking_data.db") -> str:
         _migrate_add_column(conn, "hotels", "location_score", "TEXT")
         _migrate_add_column(conn, "hotels", "distance_to_centre", "TEXT")
         _migrate_add_column(conn, "hotels", "ai_score", "TEXT")
+        _migrate_add_column(conn, "hotels", "checkin", "TEXT")
+        _migrate_add_column(conn, "hotels", "checkout", "TEXT")
 
         # price_usd → price_cny 列重命名（向前兼容旧数据库）
         _migrate_rename_column(conn, "hotels", "price_usd", "price_cny")
@@ -65,6 +68,10 @@ def init_db(db_path: str = "booking_data.db") -> str:
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_city_checkin
             ON hotels(city, checkin)
+        """)
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_checkin_checkout
+            ON hotels(checkin, checkout)
         """)
         conn.commit()
         logger.info(f"✓ 数据库已就绪: {abs_path}")
@@ -159,6 +166,127 @@ def get_all_records(db_path: str, limit: int = 100) -> list[dict]:
         rows = conn.execute(
             "SELECT * FROM hotels ORDER BY id DESC LIMIT ?", (limit,)
         ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+# ==================== 机票数据表 ====================
+
+def init_flights_table(db_path: str = "booking_data.db") -> str:
+    """初始化 flights 数据表（与 hotels 同库），返回数据库绝对路径"""
+    abs_path = str(Path(db_path).resolve())
+
+    conn = sqlite3.connect(abs_path)
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS flights (
+                id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                origin          TEXT    NOT NULL,
+                destination     TEXT    NOT NULL,
+                flight_date     TEXT    NOT NULL,
+                price_cny       TEXT,
+                price_num       REAL,
+                airline_info    TEXT,
+                cabin_class     TEXT,
+                adults          INTEGER,
+                children        INTEGER,
+                scraped_at      TEXT    NOT NULL
+            )
+        """)
+
+        # 向前兼容迁移
+        _migrate_add_column(conn, "flights", "price_num", "REAL")
+        _migrate_add_column(conn, "flights", "airline_info", "TEXT")
+        _migrate_add_column(conn, "flights", "cabin_class", "TEXT")
+        _migrate_add_column(conn, "flights", "adults", "INTEGER")
+        _migrate_add_column(conn, "flights", "children", "INTEGER")
+
+        # 索引
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_flight_scraped_at
+            ON flights(scraped_at)
+        """)
+        conn.execute("""
+            CREATE INDEX IF NOT EXISTS idx_flight_route
+            ON flights(origin, destination, flight_date)
+        """)
+        conn.commit()
+        logger.info(f"✓ 机票数据表已就绪: {abs_path}")
+    finally:
+        conn.close()
+
+    return abs_path
+
+
+def insert_flight_records(db_path: str, records: list[dict]) -> int:
+    """批量插入机票记录，返回插入条数"""
+    if not records:
+        return 0
+
+    conn = sqlite3.connect(db_path)
+    try:
+        sql = """
+            INSERT INTO flights
+                (origin, destination, flight_date, price_cny, price_num,
+                 airline_info, cabin_class, adults, children, scraped_at)
+            VALUES
+                (:origin, :destination, :flight_date, :price_cny, :price_num,
+                 :airline_info, :cabin_class, :adults, :children, :scraped_at)
+        """
+        conn.executemany(sql, records)
+        conn.commit()
+        count = conn.total_changes
+        logger.info(f"✓ 已写入机票数据库 {count} 条记录")
+        return count
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_flight_record_count(db_path: str) -> int:
+    """查询机票数据库中的总记录数"""
+    conn = sqlite3.connect(db_path)
+    try:
+        row = conn.execute("SELECT COUNT(*) FROM flights").fetchone()
+        return row[0] if row else 0
+    finally:
+        conn.close()
+
+
+def get_all_flight_records(db_path: str, limit: int = 100) -> list[dict]:
+    """查询最近抓取的所有机票记录"""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute(
+            "SELECT * FROM flights ORDER BY id DESC LIMIT ?", (limit,)
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_latest_flight_prices(db_path: str) -> list[dict]:
+    """获取每个航线的最新价格（去重：同一航线取最新抓取的一条）"""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute("""
+            SELECT f.* FROM flights f
+            INNER JOIN (
+                SELECT origin, destination, flight_date, MAX(scraped_at) AS max_ts
+                FROM flights
+                GROUP BY origin, destination, flight_date
+            ) latest
+            ON f.origin = latest.origin
+               AND f.destination = latest.destination
+               AND f.flight_date = latest.flight_date
+               AND f.scraped_at = latest.max_ts
+            ORDER BY f.flight_date ASC, f.id ASC
+        """).fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()

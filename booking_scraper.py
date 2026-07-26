@@ -585,6 +585,108 @@ class BookingScraper:
 
         return "N/A"
 
+    # ==================== 预订日期提取 ====================
+
+    def _extract_booking_dates(self, task: dict) -> tuple:
+        """从搜索结果页面提取实际的预订日期（入住日期 / 退房日期）
+
+        Booking.com 搜索页面顶部通常会显示搜索的日期范围，例如：
+          - 日期选择器中显示的 checkin → checkout
+          - 搜索摘要栏中的日期文本
+
+        优先从页面提取，失败时回退到任务配置中的日期。
+
+        返回 (checkin_date, checkout_date) 字符串元组。
+        """
+        checkin_date = task.get("checkin", "")
+        checkout_date = task.get("checkout", "")
+
+        try:
+            # 方案 A：从搜索摘要栏提取日期（页面顶部 "X nights, dates" 区域）
+            summary_sels = [
+                '[data-testid="searchbox-dates"]',
+                '[data-testid="datepicker-tabs"]',
+                '[data-testid="search-box-dates"]',
+                '.sb-searchbox__input',
+                '.sb-date-field__display',
+            ]
+            for sel in summary_sels:
+                try:
+                    el = self.page.query_selector(sel)
+                    if el:
+                        text = el.inner_text().strip()
+                        if text:
+                            logger.info(f"  📅 页面日期摘要: {text[:100]}")
+                            # 尝试解析日期：常见格式如 "Wed, Jul 15 – Sat, Jul 18"、"15 Jul – 18 Jul"
+                            dates = re.findall(
+                                r'(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+\d{4})',
+                                text, re.IGNORECASE
+                            )
+                            if len(dates) >= 2:
+                                try:
+                                    ci = datetime.strptime(dates[0], "%d %b %Y")
+                                    co = datetime.strptime(dates[1], "%d %b %Y")
+                                    checkin_date = ci.strftime("%Y-%m-%d")
+                                    checkout_date = co.strftime("%Y-%m-%d")
+                                    logger.info(f"  ✓ 从页面提取到日期: {checkin_date} → {checkout_date}")
+                                    return checkin_date, checkout_date
+                                except ValueError:
+                                    pass
+                            # 尝试 "dd Month yyyy" 格式
+                            dates2 = re.findall(
+                                r'(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})',
+                                text, re.IGNORECASE
+                            )
+                            if len(dates2) >= 2:
+                                try:
+                                    ci = datetime.strptime(dates2[0], "%d %B %Y")
+                                    co = datetime.strptime(dates2[1], "%d %B %Y")
+                                    checkin_date = ci.strftime("%Y-%m-%d")
+                                    checkout_date = co.strftime("%Y-%m-%d")
+                                    logger.info(f"  ✓ 从页面提取到日期: {checkin_date} → {checkout_date}")
+                                    return checkin_date, checkout_date
+                                except ValueError:
+                                    pass
+                except Exception:
+                    continue
+
+            # 方案 B：从搜索框的 placeholder / value 属性提取
+            date_input_sels = [
+                'input[data-testid="searchbox-checkin"]',
+                'input[data-testid="searchbox-checkout"]',
+                'input[name="checkin"]',
+                'input[name="checkout"]',
+                '[data-testid="datepicker-checkin"]',
+                '[data-testid="datepicker-checkout"]',
+            ]
+            for sel in date_input_sels:
+                try:
+                    el = self.page.query_selector(sel)
+                    if el:
+                        val = el.get_attribute("value") or el.get_attribute("placeholder") or ""
+                        if val and re.match(r'\d{4}-\d{2}-\d{2}', val):
+                            if "checkin" in sel or "check-in" in sel.lower():
+                                checkin_date = val
+                            else:
+                                checkout_date = val
+                except Exception:
+                    continue
+
+            # 方案 C：从页面 URL 参数中提取（最可靠的回退）
+            current_url = self.page.url
+            url_ci = re.search(r'checkin=(\d{4}-\d{2}-\d{2})', current_url)
+            url_co = re.search(r'checkout=(\d{4}-\d{2}-\d{2})', current_url)
+            if url_ci:
+                checkin_date = url_ci.group(1)
+            if url_co:
+                checkout_date = url_co.group(1)
+
+        except Exception as e:
+            logger.debug(f"  从页面提取日期失败: {e}")
+
+        logger.info(f"  📅 预订日期: {checkin_date} → {checkout_date}")
+        return checkin_date, checkout_date
+
     # ==================== 链接 & 评分提取 ====================
 
     def _extract_link(self, card) -> str:
@@ -680,13 +782,14 @@ class BookingScraper:
 
         return "N/A"
 
-    def _card_matches_twin_beds(self, room_type: str) -> bool:
-        """检查房型文本是否匹配双床房关键词（辅助筛选）"""
-        if not self.cfg.filter_twin_beds:
+    def _card_matches_triple_or_family(self, room_type: str) -> bool:
+        """检查房型文本是否匹配三人间/家庭房关键词（辅助筛选）"""
+        if not self.cfg.filter_triple_or_family:
             return True  # 未启用筛选时全部通过
         keywords = [
-            "twin", "single beds", "2 single", "two single",
-            "2 beds", "two beds", "separate beds",
+            "triple", "triple room", "3 single beds", "3 beds",
+            "three single", "three beds", "family", "family room",
+            "quadruple", "4 beds", "four beds",
         ]
         rt_lower = room_type.lower()
         return any(kw in rt_lower for kw in keywords)
@@ -728,6 +831,9 @@ class BookingScraper:
     def _extract_cards(self, task: dict) -> list[dict]:
         """从当前页面提取所有房源卡片数据"""
         self._rand_delay(1, 2)
+
+        # ---- 从页面提取实际的预订日期（入住/退房） ----
+        checkin_date, checkout_date = self._extract_booking_dates(task)
 
         # 尝试多种卡片选择器
         card_selectors = [
@@ -811,8 +917,8 @@ class BookingScraper:
                     "location_score": location_score,
                     "distance_to_centre": distance_to_centre,
                     "city": task["city"],
-                    "checkin": task["checkin"],
-                    "checkout": task["checkout"],
+                    "checkin": checkin_date,
+                    "checkout": checkout_date,
                     "scraped_at": self._start_time,
                 }
 
@@ -993,12 +1099,43 @@ class BookingScraper:
         total_pages = 0
         total_extracted = 0
 
+        # ---- 日期范围过滤 ----
+        date_min = self.cfg.SCRAPE_DATE_MIN
+        date_max = self.cfg.SCRAPE_DATE_MAX
+        skipped_tasks = []
+
+        valid_tasks = []
+        for task in tasks:
+            checkin = task.get("checkin", "")
+            checkout = task.get("checkout", "")
+            if checkin < date_min or checkout > date_max:
+                logger.warning(
+                    f"  ⚠ 跳过 {task['city']}: "
+                    f"日期 {checkin}→{checkout} 超出允许范围 "
+                    f"({date_min} ~ {date_max})"
+                )
+                skipped_tasks.append(task)
+            else:
+                valid_tasks.append(task)
+
+        if skipped_tasks:
+            logger.info(
+                f"  日期过滤: 跳过 {len(skipped_tasks)} 个城市，"
+                f"保留 {len(valid_tasks)} 个"
+            )
+        tasks = valid_tasks
+
+        if not tasks:
+            logger.warning("  ⚠ 所有城市任务均超出日期范围，无任务可执行")
+            return
+
         logger.info(f"\n{'=' * 60}")
         logger.info(f"  长途旅行计划爬虫启动 (V4 · CNY · 位置评分)")
         logger.info(f"  共 {len(tasks)} 个城市 | 每个最多 {self.cfg.max_pages} 页")
+        logger.info(f"  日期范围: {date_min} ~ {date_max}")
         logger.info(f"  默认搜索: {self.cfg.default_adults} 成人 + "
                     f"{self.cfg.default_children} 儿童（{self.cfg.children_ages_param} 岁）")
-        logger.info(f"  筛选: 双床房={self.cfg.filter_twin_beds} | "
+        logger.info(f"  筛选: 三人间/家庭房={self.cfg.filter_triple_or_family} | "
                     f"免费取消={self.cfg.filter_free_cancellation} | "
                     f"空调={self.cfg.filter_air_conditioning}")
         logger.info(f"{'=' * 60}\n")

@@ -12,6 +12,10 @@ import plotly.express as px
 import streamlit as st
 
 from config import ScraperConfig
+from database import (
+    get_latest_flight_prices,
+    get_flight_record_count,
+)
 
 # ==================== 页面设置 ====================
 st.set_page_config(
@@ -97,6 +101,10 @@ def load_data(db_path: str) -> pd.DataFrame:
     # ---- 将 scraped_at 转为 datetime ----
     df["scraped_at_dt"] = pd.to_datetime(df["scraped_at"], errors="coerce")
 
+    # ---- 将 checkin / checkout 转为日期（入住日期 / 退房日期） ----
+    df["checkin_dt"] = pd.to_datetime(df["checkin"], errors="coerce")
+    df["checkout_dt"] = pd.to_datetime(df["checkout"], errors="coerce")
+
     return df
 
 
@@ -144,6 +152,52 @@ if not df.empty:
 else:
     time_range = None
 
+# ---- 入住日期范围筛选 ----
+if not df.empty:
+    valid_checkin = df["checkin_dt"].dropna()
+    if not valid_checkin.empty:
+        ci_min: datetime = valid_checkin.min().to_pydatetime()
+        ci_max: datetime = valid_checkin.max().to_pydatetime()
+
+        if ci_min == ci_max:
+            ci_min = ci_min - timedelta(days=1)
+            ci_max = ci_max + timedelta(days=1)
+
+        checkin_range = st.sidebar.slider(
+            "🏨 入住日期范围",
+            min_value=ci_min,
+            max_value=ci_max,
+            value=(ci_min, ci_max),
+            format="YYYY-MM-DD",
+        )
+    else:
+        checkin_range = None
+else:
+    checkin_range = None
+
+# ---- 退房日期范围筛选 ----
+if not df.empty:
+    valid_checkout = df["checkout_dt"].dropna()
+    if not valid_checkout.empty:
+        co_min: datetime = valid_checkout.min().to_pydatetime()
+        co_max: datetime = valid_checkout.max().to_pydatetime()
+
+        if co_min == co_max:
+            co_min = co_min - timedelta(days=1)
+            co_max = co_max + timedelta(days=1)
+
+        checkout_range = st.sidebar.slider(
+            "🏨 退房日期范围",
+            min_value=co_min,
+            max_value=co_max,
+            value=(co_min, co_max),
+            format="YYYY-MM-DD",
+        )
+    else:
+        checkout_range = None
+else:
+    checkout_range = None
+
 # ---- 最高价格 ----
 if not df.empty:
     valid_prices = df["price_num"].dropna()
@@ -164,6 +218,18 @@ else:
     max_price = 99999
 
 st.sidebar.divider()
+# ---- 日期摘要 ----
+if not df.empty:
+    valid_ci = df["checkin_dt"].dropna()
+    valid_co = df["checkout_dt"].dropna()
+    if not valid_ci.empty:
+        st.sidebar.caption(
+            f"📅 入住日期范围: {valid_ci.min().strftime('%Y-%m-%d')} → {valid_ci.max().strftime('%Y-%m-%d')}"
+        )
+    if not valid_co.empty:
+        st.sidebar.caption(
+            f"📅 退房日期范围: {valid_co.min().strftime('%Y-%m-%d')} → {valid_co.max().strftime('%Y-%m-%d')}"
+        )
 st.sidebar.caption(f"数据库路径: `{DB_PATH}`")
 if not df.empty:
     st.sidebar.caption(f"总记录数: {len(df)}")
@@ -182,6 +248,14 @@ if selected_cities:
 
 if time_range is not None:
     mask &= (df["scraped_at_dt"] >= time_range[0]) & (df["scraped_at_dt"] <= time_range[1])
+
+# 入住日期过滤
+if checkin_range is not None:
+    mask &= (df["checkin_dt"] >= checkin_range[0]) & (df["checkin_dt"] <= checkin_range[1])
+
+# 退房日期过滤
+if checkout_range is not None:
+    mask &= (df["checkout_dt"] >= checkout_range[0]) & (df["checkout_dt"] <= checkout_range[1])
 
 # 价格过滤（保留无价格记录）
 price_mask = df["price_num"].isna() | (df["price_num"] <= max_price)
@@ -216,6 +290,8 @@ else:
     scatter_df["hover_label"] = (
         scatter_df["hotel_name"].str[:40]
         + "<br>城市: " + scatter_df["city"]
+        + "<br>入住: " + scatter_df["checkin"].fillna("N/A")
+        + "<br>退房: " + scatter_df["checkout"].fillna("N/A")
         + "<br>价格: ¥" + scatter_df["price_num"].apply(lambda x: f"{x:,.0f}")
         + "<br>AI 评分: " + scatter_df["ai_score_num"].apply(lambda x: f"{x:.0f}" if pd.notna(x) else "N/A")
     )
@@ -324,3 +400,99 @@ st.download_button(
     file_name=f"hotel_export_{datetime.now():%Y%m%d_%H%M}.csv",
     mime="text/csv",
 )
+
+# ==================== 机票价格 ====================
+
+st.divider()
+st.subheader("✈️ 机票价格监控")
+
+# 加载机票数据
+try:
+    flight_records = get_latest_flight_prices(DB_PATH)
+except Exception:
+    flight_records = []
+
+if not flight_records:
+    st.info("暂无机票数据，请运行 flight_scraper.py 抓取机票价格。")
+else:
+    flight_df = pd.DataFrame(flight_records)
+
+    # ---- 机票汇总卡片 ----
+    if not flight_df.empty:
+        n_routes = flight_df[["origin", "destination"]].drop_duplicates().shape[0]
+        min_price = flight_df["price_num"].min() if "price_num" in flight_df.columns else None
+        max_price = flight_df["price_num"].max() if "price_num" in flight_df.columns else None
+
+        fc1, fc2, fc3, fc4 = st.columns(4)
+        with fc1:
+            st.metric("✈️ 航线数量", n_routes)
+        with fc2:
+            if min_price is not None:
+                st.metric("💰 最低机票价", f"¥{min_price:,.0f}")
+            else:
+                st.metric("💰 最低机票价", "N/A")
+        with fc3:
+            if max_price is not None:
+                st.metric("💸 最高机票价", f"¥{max_price:,.0f}")
+            else:
+                st.metric("💸 最高机票价", "N/A")
+        with fc4:
+            total_flights = get_flight_record_count(DB_PATH)
+            st.metric("📊 总抓取记录", total_flights)
+
+    # ---- 机票明细表格 ----
+    flight_display_cols = {
+        "origin": "出发地",
+        "destination": "目的地",
+        "flight_date": "出发日期",
+        "price_cny": "价格 (CNY)",
+        "airline_info": "航班信息",
+        "cabin_class": "舱位",
+        "adults": "成人",
+        "children": "儿童",
+        "scraped_at": "抓取时间",
+    }
+    flight_available = [c for c in flight_display_cols if c in flight_df.columns]
+    flight_table = flight_df[flight_available].rename(
+        columns={c: flight_display_cols[c] for c in flight_available}
+    )
+
+    st.dataframe(
+        flight_table,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    # ---- 机票价格柱状图 ----
+    if "price_num" in flight_df.columns and "origin" in flight_df.columns and "destination" in flight_df.columns:
+        flight_df["route_label"] = (
+            flight_df["origin"] + " → " + flight_df["destination"]
+            + "<br>" + flight_df["flight_date"]
+        )
+
+        fig_flight = px.bar(
+            flight_df,
+            x="route_label",
+            y="price_num",
+            color="route_label",
+            labels={
+                "route_label": "航线",
+                "price_num": "价格 (CNY)",
+            },
+            title="✈️ 各航线机票价格对比",
+            height=400,
+            text_auto=".0f",
+        )
+        fig_flight.update_layout(
+            yaxis=dict(tickprefix="¥", tickformat=",d"),
+            showlegend=False,
+            xaxis=dict(tickangle=-30),
+        )
+        fig_flight.update_traces(
+            hovertemplate=(
+                "价格: ¥%{y:,.0f}<br>"
+                "航线: %{x}"
+                "<extra></extra>"
+            ),
+        )
+        st.plotly_chart(fig_flight, use_container_width=True)
