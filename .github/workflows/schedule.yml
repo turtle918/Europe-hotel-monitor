@@ -29,6 +29,8 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Run scrapers
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
           sed -i 's/headless: bool = False/headless: bool = True/' config.py
           python booking_scraper.py
