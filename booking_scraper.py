@@ -7,7 +7,7 @@ Booking.com 房源爬虫 V5
   - 灵活筛选：双床房 / 免费取消 / 空调
   - 按城市 max_price_cny 自动过滤高价房源
   - 提取位置评分（Location Score）和距市中心距离
-  - 城市间 3-5 分钟随机休眠防反爬
+  - 城市间 15-30 秒随机延迟防反爬
   - 数据实时写入 SQLite 数据库
 
 反反爬策略：Playwright Stealth + 随机延迟 + 浏览器指纹伪装 + URL 参数筛选
@@ -238,7 +238,7 @@ class BookingScraper:
         self.page = await self.context.new_page()
 
         # 注入 stealth 初始化脚本
-        self.page.add_init_script("""
+        await self.page.add_init_script("""
             Object.defineProperty(navigator, 'plugins',
                 { get: () => [1,2,3,4,5] });
             Object.defineProperty(navigator, 'languages',
@@ -680,10 +680,10 @@ class BookingScraper:
 
     # ==================== 调试辅助 ====================
 
-    def _dump_card_html(self, card, prefix: str = "card"):
+    async def _dump_card_html(self, card, prefix: str = "card"):
         """转储单个卡片的 HTML 用于离线调试"""
         try:
-            html = card.inner_html()
+            html = await card.inner_html()
             path = Path(f"debug_{prefix}_{datetime.now():%H%M%S}.html")
             path.write_text(html, encoding="utf-8")
             logger.info(f"  🔍 卡片 HTML 已保存: {path.resolve()}")
@@ -833,7 +833,7 @@ class BookingScraper:
                 # ---- 调试：保存第一张卡片的完整内部 HTML ----
                 if len(extracted) == 0:
                     with open('debug_card.html', 'w', encoding='utf-8') as f:
-                        f.write(card.inner_html())
+                        f.write(await card.inner_html())
                     logger.info(f"  🔍 已保存第 1 张卡片 HTML → debug_card.html")
 
                 # ---- 名称提取 ----
@@ -986,30 +986,17 @@ class BookingScraper:
     # ==================== 城市间休眠 ====================
 
     async def _inter_city_delay(self):
-        """城市间的强制随机异步休眠（3-5 分钟），防止触发反爬虫"""
+        """城市间的随机异步延迟（15-30 秒），防止触发反爬虫"""
         delay = random.uniform(
             self.cfg.inter_city_delay_min,
             self.cfg.inter_city_delay_max,
         )
-        minutes = int(delay // 60)
-        seconds = int(delay % 60)
         logger.info(
-            f"\n⏳ 城市间休眠 {minutes} 分 {seconds} 秒 "
-            f"（防反爬策略）…"
+            f"\n⏳ 城市间延迟 {delay:.0f} 秒（防反爬策略）…"
         )
 
-        remaining = delay
-        while remaining > 0:
-            chunk = min(30, remaining)
-            await asyncio.sleep(chunk)
-            remaining -= chunk
-            if remaining > 0:
-                logger.info(
-                    f"   剩余约 {int(remaining // 60)} 分 "
-                    f"{int(remaining % 60)} 秒 …"
-                )
-
-        logger.info("  休眠结束，继续下一个城市 ✓\n")
+        await asyncio.sleep(delay)
+        logger.info("  延迟结束，继续下一个城市 ✓\n")
 
     # ==================== 保存 ====================
 
@@ -1079,7 +1066,7 @@ class BookingScraper:
         city_page = await city_ctx.new_page()
 
         # 注入指纹伪装脚本
-        city_page.add_init_script("""
+        await city_page.add_init_script("""
             Object.defineProperty(navigator, 'plugins',
                 { get: () => [1,2,3,4,5] });
             Object.defineProperty(navigator, 'languages',

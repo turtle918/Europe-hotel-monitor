@@ -184,8 +184,8 @@ class ScraperConfig:
 
     # ==================== 城市间休眠 ====================
     # 为防止触发反爬虫，每个城市任务之间强制随机休眠
-    inter_city_delay_min: float = 180.0   # 3 分钟
-    inter_city_delay_max: float = 300.0   # 5 分钟
+    inter_city_delay_min: float = 15.0   # 15 秒
+    inter_city_delay_max: float = 30.0   # 30 秒
 
     # ==================== 爬虫行为 ====================
     headless: bool = False          # 无头模式（True = 后台运行，不显示浏览器窗口）
