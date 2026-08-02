@@ -195,6 +195,17 @@ class ScraperConfig:
     page_timeout: int = 60_000      # 页面加载超时（毫秒）
     scroll_times: int = 3           # 每页滚动次数（加载懒加载内容）
 
+    # ==================== 异步并发配置 ====================
+    # 城市爬取并发度：1 = 顺序（与之前行为一致），N = 同时爬取 N 个城市
+    # 每个并发城市拥有独立的浏览器上下文，共享浏览器实例
+    booking_concurrency: int = 1
+
+    # 航线爬取并发度：1 = 顺序，N = 同时爬取 N 条航线
+    flight_concurrency: int = 1
+
+    # 智能等待超时（毫秒），用于 wait_for_selector / wait_for_load_state
+    smart_wait_timeout: int = 15_000
+
     # ==================== 输出 ====================
     db_file: str = "booking_data.db"
     output_file: str = "booking_results.csv"
