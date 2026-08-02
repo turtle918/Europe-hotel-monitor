@@ -9,7 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  scrape:
+  # ==================== Job 1: 酒店爬虫 ====================
+  scrape-hotels:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,13 +29,86 @@ jobs:
           pip install playwright playwright-stealth
           playwright install chromium --with-deps
 
-      - name: Run scrapers
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      - name: Run hotel scraper
         run: |
           sed -i 's/headless: bool = False/headless: bool = True/' config.py
           python booking_scraper.py
+
+      - name: Upload hotel database
+        uses: actions/upload-artifact@v4
+        with:
+          name: hotel-db
+          path: booking_data.db
+
+  # ==================== Job 2: 机票爬虫 ====================
+  scrape-flights:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run flight scraper
+        run: |
+          sed -i 's/headless: bool = False/headless: bool = True/' config.py
           python flight_scraper.py
+
+      - name: Upload flight database
+        uses: actions/upload-artifact@v4
+        with:
+          name: flight-db
+          path: booking_data.db
+
+  # ==================== Job 3: 合并 & AI 评分 & 提交 ====================
+  evaluate-and-commit:
+    needs: [scrape-hotels, scrape-flights]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download hotel database
+        uses: actions/download-artifact@v4
+        with:
+          name: hotel-db
+
+      - name: Download flight database
+        uses: actions/download-artifact@v4
+        with:
+          name: flight-db
+          path: flight-db
+
+      - name: Merge databases
+        run: |
+          sqlite3 booking_data.db "ATTACH DATABASE 'flight-db/booking_data.db' AS flight_db; INSERT OR IGNORE INTO flights SELECT * FROM flight_db.flights;"
+
+      - name: Run AI evaluator
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
           python ai_evaluator.py
 
       - name: Configure Git
