@@ -209,17 +209,48 @@ class FlightScraper:
 
         price_re = re.compile(r'(?:CN¥|¥|HK\$)\s*([\d,]{3,6}(?:\.\d{1,2})?)')
 
-        # 浏览器端一次性定位所有航班卡片（含价格的 li），取回文本与首个链接
+        # 浏览器端一次性定位所有航班卡片（多策略，适配 Google Flights 不同 DOM 结构），
+        # 取回卡片文本与首个链接
         try:
             cards_data = await self.page.evaluate(
                 """() => {
                     const priceRe = /(?:CN¥|¥|HK\\$)\\s*[\\d,]{3,6}(?:\\.\\d{1,2})?/;
-                    const lis = [...document.querySelectorAll('li')];
-                    const cards = lis.filter(li => priceRe.test(li.innerText || ''));
-                    return cards.slice(0, 15).map(li => {
-                        const a = li.querySelector('a[href]');
+                    const hasPrice = (el) => priceRe.test((el.innerText || '').trim());
+                    const isShortPrice = (el) => {
+                        const t = (el.innerText || '').trim();
+                        return priceRe.test(t) && t.length < 30 && el.children.length === 0;
+                    };
+                    const seen = new Set();
+                    const cards = [];
+                    const push = (el, maxLen) => {
+                        if (el && !seen.has(el) && hasPrice(el) &&
+                            (el.innerText || '').length < (maxLen || 3000)) {
+                            seen.add(el);
+                            cards.push(el);
+                        }
+                    };
+                    // 策略1：语义化列表项 role=listitem
+                    [...document.querySelectorAll('[role="listitem"]')].forEach((el) => push(el));
+                    // 策略2：li 标签
+                    [...document.querySelectorAll('li')].forEach((el) => push(el));
+                    // 策略3：从"纯价格"叶子节点向上爬，找同时含时间+航程/中转信息的卡片容器
+                    [...document.querySelectorAll('span, div')].forEach((el) => {
+                        if (!isShortPrice(el)) return;
+                        let cur = el.parentElement;
+                        for (let i = 0; i < 8 && cur; i++) {
+                            const t = (cur.innerText || '').trim();
+                            if (/\\d{1,2}:\\d{2}/.test(t) &&
+                                /(stop|nonstop|直飞|中转|h\\s*\\d|h\\d+m)/i.test(t)) {
+                                push(cur, 1200);
+                                break;
+                            }
+                            cur = cur.parentElement;
+                        }
+                    });
+                    return cards.slice(0, 15).map((el) => {
+                        const a = el.querySelector('a[href]');
                         return {
-                            text: (li.innerText || '').trim(),
+                            text: (el.innerText || '').trim(),
                             href: a ? a.href : null,
                         };
                     });

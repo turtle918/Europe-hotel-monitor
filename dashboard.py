@@ -553,6 +553,10 @@ with tab_flight:
                 # 排序：按最低票价从低到高，图表更易读
                 route_min = route_min.sort_values("price_num", ascending=True)
 
+                # 根据数据最大值/最小值自动计算 Y 轴范围（不固定上限，防止高票价被截断）
+                y_axis_min = min(0, float(route_min["price_num"].min()))
+                y_axis_max = float(route_min["price_num"].max()) * 1.15
+
                 fig_flight = px.bar(
                     route_min,
                     x="route_label",
@@ -568,13 +572,15 @@ with tab_flight:
                 )
                 fig_flight.update_layout(
                     yaxis=dict(
-                        tickprefix="¥", tickformat=",d", title="最低票价 (CNY)"
+                        range=[y_axis_min, y_axis_max],
+                        tickprefix="¥", tickformat=",d", title="最低票价 (CNY)",
                     ),
                     xaxis=dict(tickangle=-25, title=None),
                     showlegend=False,
                     margin=dict(l=40, r=20, t=40, b=60),
                 )
                 fig_flight.update_traces(
+                    width=0.3,
                     hovertemplate=(
                         "航线: %{x}<br>"
                         "最低票价: ¥%{y:,.0f}"
