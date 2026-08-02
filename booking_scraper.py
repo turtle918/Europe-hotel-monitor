@@ -16,6 +16,7 @@ V5 更新：
   - 全异步 Playwright async_api 实现
   - 固定等待 (wait_for_timeout) → 智能等待 (wait_for_load_state + wait_for_selector)
   - 支持多城市并发抓取 (booking_concurrency 配置项)
+  - 所有 ElementHandle 方法均正确 await
 """
 
 import asyncio
@@ -112,12 +113,6 @@ class BookingScraper:
             'span.recommended_location',
         ],
     }
-
-    # ---- 浏览器共享配置字段 ----
-    _CONTEXT_VIEWPORT: dict = {}
-    _CONTEXT_LOCALE: str = ""
-    _CONTEXT_USER_AGENT: str = ""
-    _CONTEXT_PROXY: dict = {}
 
     def __init__(self, config: ScraperConfig):
         self.cfg = config
@@ -237,7 +232,7 @@ class BookingScraper:
         self.context = await self.browser.new_context(**ctx_kwargs)
         self.page = await self.context.new_page()
 
-        # 注入 stealth 初始化脚本
+        # 注入 stealth 初始化脚本（await：新版 Playwright add_init_script 是异步的）
         await self.page.add_init_script("""
             Object.defineProperty(navigator, 'plugins',
                 { get: () => [1,2,3,4,5] });
@@ -321,7 +316,6 @@ class BookingScraper:
         await self.page.goto(search_url, wait_until="domcontentloaded", timeout=60000)
 
         # ---- 智能等待：替换固定 8s 等待 ----
-        # Step 1: 等待网络空闲
         try:
             await self.page.wait_for_load_state(
                 "networkidle", timeout=self.cfg.smart_wait_timeout
@@ -332,7 +326,6 @@ class BookingScraper:
                 f"  ⚠ networkidle 超时 ({self.cfg.smart_wait_timeout}ms)，继续尝试 …"
             )
 
-        # Step 2: 等待房源卡片容器出现（内容就绪信号）
         card_selector = self.SELECTORS["property_card"][0]
         try:
             await self.page.wait_for_selector(
@@ -343,24 +336,23 @@ class BookingScraper:
             logger.warning("  ⚠ 未检测到 property-card，尝试回退等待 …")
             await asyncio.sleep(3.0)
 
-    # ==================== 数据提取 ====================
+    # ==================== 数据提取（ElementHandle 方法均需 await） ====================
 
-    # 以下方法仅操作 ElementHandle（同步 API），无需 async
-    def _extract_text(self, el, selectors: list[str],
-                      default: str = "N/A") -> str:
+    async def _extract_text(self, el, selectors: list[str],
+                            default: str = "N/A") -> str:
         """从元素中按优先级尝试多个选择器提取文本"""
         for sel in selectors:
             try:
-                child = el.query_selector(sel)
+                child = await el.query_selector(sel)
                 if child:
-                    text = child.inner_text().strip()
+                    text = (await child.inner_text()).strip()
                     if text:
                         return text
             except Exception:
                 continue
         return default
 
-    def _extract_price(self, card) -> str:
+    async def _extract_price(self, card) -> str:
         """从卡片的多个可能位置提取价格"""
         # 方案 A：通过专用 data-testid 选择器提取
         price_sels = [
@@ -371,9 +363,9 @@ class BookingScraper:
         ]
         for sel in price_sels:
             try:
-                el = card.query_selector(sel)
+                el = await card.query_selector(sel)
                 if el:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                     m = re.search(r'(?:CN¥|¥|US\$|€|£)?\s*([\d,]+(?:\.[\d]{1,2})?)', text)
                     if m:
                         return m.group(1)
@@ -382,10 +374,10 @@ class BookingScraper:
 
         # 方案 B：扫描卡片内所有 span/div，查找 CNY 价格模式
         try:
-            all_els = card.query_selector_all('span, div')
+            all_els = await card.query_selector_all('span, div')
             for el in all_els:
                 try:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                 except Exception:
                     continue
                 if not text:
@@ -398,10 +390,10 @@ class BookingScraper:
 
         # 方案 C：扫描任何包含合理数字（价格量级）的元素
         try:
-            all_els = card.query_selector_all('span, div')
+            all_els = await card.query_selector_all('span, div')
             for el in all_els:
                 try:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                 except Exception:
                     continue
                 m = re.search(r'([\d,]{2,6}(?:\.[\d]{1,2})?)', text)
@@ -418,7 +410,7 @@ class BookingScraper:
 
         return "N/A"
 
-    def _extract_room_type(self, card) -> str:
+    async def _extract_room_type(self, card) -> str:
         """提取房型描述"""
         sels = [
             'h4',
@@ -429,9 +421,9 @@ class BookingScraper:
         ]
         for sel in sels:
             try:
-                el = card.query_selector(sel)
+                el = await card.query_selector(sel)
                 if el:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                     if text and len(text) < 120:
                         return text
             except Exception:
@@ -439,17 +431,17 @@ class BookingScraper:
 
         try:
             title_el = (
-                card.query_selector('[data-testid="title"]')
-                or card.query_selector('h3')
-                or card.query_selector('h2')
+                await card.query_selector('[data-testid="title"]')
+                or await card.query_selector('h3')
+                or await card.query_selector('h2')
             )
             if title_el:
-                parent = title_el.query_selector('xpath=..')
+                parent = await title_el.query_selector('xpath=..')
                 if parent:
-                    siblings = parent.query_selector_all('xpath=following-sibling::*')
+                    siblings = await parent.query_selector_all('xpath=following-sibling::*')
                     for sib in siblings[:5]:
                         try:
-                            text = sib.inner_text().strip()
+                            text = (await sib.inner_text()).strip()
                             if text and 3 < len(text) < 120:
                                 if not re.search(
                                     r'(?:CN¥|¥|€|US\$|Scored|\d+\.\d+\s*(?:km|m)\s+from)',
@@ -463,13 +455,13 @@ class BookingScraper:
 
         return "N/A"
 
-    def _extract_location(self, card) -> str:
+    async def _extract_location(self, card) -> str:
         """从房源卡片中提取位置 / 距离描述文字"""
         for sel in self.SELECTORS["location_desc"]:
             try:
-                el = card.query_selector(sel)
+                el = await card.query_selector(sel)
                 if el:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                     if text and len(text) < 200:
                         if not text.startswith("Scored") and \
                            not text.startswith("€") and \
@@ -480,10 +472,10 @@ class BookingScraper:
                 continue
 
         try:
-            spans = card.query_selector_all("span, div")
+            spans = await card.query_selector_all("span, div")
             for sp in spans:
                 try:
-                    text = sp.inner_text().strip()
+                    text = (await sp.inner_text()).strip()
                 except Exception:
                     continue
                 if not text or len(text) > 150:
@@ -504,13 +496,13 @@ class BookingScraper:
 
         return "N/A"
 
-    def _extract_location_score(self, card) -> str:
+    async def _extract_location_score(self, card) -> str:
         """从房源卡片中提取「位置评分（Location Score）」"""
         try:
-            all_els = card.query_selector_all('div, span, li')
+            all_els = await card.query_selector_all('div, span, li')
             for el in all_els:
                 try:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                 except Exception:
                     continue
                 if not text or len(text) > 80:
@@ -527,10 +519,10 @@ class BookingScraper:
             pass
 
         try:
-            all_els = card.query_selector_all('[aria-label*="Location" i]')
+            all_els = await card.query_selector_all('[aria-label*="Location" i]')
             for el in all_els:
                 try:
-                    label = el.get_attribute("aria-label") or ""
+                    label = (await el.get_attribute("aria-label")) or ""
                     m = re.search(r'(\d+\.?\d{0,1})', label)
                     if m:
                         score = float(m.group(1))
@@ -543,9 +535,9 @@ class BookingScraper:
 
         return "N/A"
 
-    def _extract_distance_to_centre(self, card) -> str:
+    async def _extract_distance_to_centre(self, card) -> str:
         """从房源卡片中提取「距市中心距离」"""
-        loc = self._extract_location(card)
+        loc = await self._extract_location(card)
         if loc != "N/A":
             m = re.search(
                 r'(\d+\.?\d*\s*(?:km|m|kilometre|metre|mile)s?)\s+from\s+(?:the\s+)?(?:city\s+)?cent',
@@ -563,10 +555,10 @@ class BookingScraper:
                 return loc
 
         try:
-            all_els = card.query_selector_all('span, div')
+            all_els = await card.query_selector_all('span, div')
             for el in all_els:
                 try:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                 except Exception:
                     continue
                 if not text or len(text) > 100:
@@ -582,25 +574,25 @@ class BookingScraper:
 
         return "N/A"
 
-    def _extract_link(self, card) -> str:
+    async def _extract_link(self, card) -> str:
         """提取酒店详情链接"""
         try:
-            a = card.query_selector('a[data-testid="title-link"]')
+            a = await card.query_selector('a[data-testid="title-link"]')
             if not a:
-                a = card.query_selector('a[href*="hotel"]')
+                a = await card.query_selector('a[href*="hotel"]')
             if not a:
-                a = card.query_selector('a[href*="property"]')
+                a = await card.query_selector('a[href*="property"]')
             if not a:
-                links = card.query_selector_all('a')
+                links = await card.query_selector_all('a')
                 for link in links:
-                    href = link.get_attribute('href') or ''
+                    href = (await link.get_attribute('href')) or ''
                     if '/hotel/' in href or '/property/' in href:
                         a = link
                         break
             if not a:
-                a = card.query_selector('a[href]')
+                a = await card.query_selector('a[href]')
             if a:
-                href = a.get_attribute("href")
+                href = await a.get_attribute("href")
                 if href:
                     return href if href.startswith("http") else \
                         self.BASE_URL + href
@@ -608,21 +600,21 @@ class BookingScraper:
             pass
         return "N/A"
 
-    def _extract_score(self, card) -> str:
+    async def _extract_score(self, card) -> str:
         """从卡片中提取综合评分"""
         for container_sel in [
             '[data-testid="review-score"]',
             'div[data-testid="review-score"]',
         ]:
             try:
-                container = card.query_selector(container_sel)
+                container = await card.query_selector(container_sel)
                 if not container:
                     continue
                 for child_sel in ['div', 'span', '> div:first-child', '> span']:
                     try:
-                        children = container.query_selector_all(child_sel)
+                        children = await container.query_selector_all(child_sel)
                         for child in children:
-                            text = child.inner_text().strip()
+                            text = (await child.inner_text()).strip()
                             if not text:
                                 continue
                             m = re.search(r'^(\d+\.?\d{0,1})\s*$', text)
@@ -632,7 +624,7 @@ class BookingScraper:
                                     return m.group(1)
                     except Exception:
                         continue
-                text = container.inner_text().strip()
+                text = (await container.inner_text()).strip()
                 m = re.search(r'(\d+\.?\d*)', text)
                 if m:
                     score = float(m.group(1))
@@ -642,10 +634,10 @@ class BookingScraper:
                 continue
 
         try:
-            all_els = card.query_selector_all('div, span')
+            all_els = await card.query_selector_all('div, span')
             for el in all_els:
                 try:
-                    text = el.inner_text().strip()
+                    text = (await el.inner_text()).strip()
                 except Exception:
                     continue
                 if not text:
@@ -718,7 +710,6 @@ class BookingScraper:
         checkout_date = task.get("checkout", "")
 
         try:
-            # 方案 A：从搜索摘要栏提取
             summary_sels = [
                 '[data-testid="searchbox-dates"]',
                 '[data-testid="datepicker-tabs"]',
@@ -730,7 +721,7 @@ class BookingScraper:
                 try:
                     el = await self.page.query_selector(sel)
                     if el:
-                        text = el.inner_text().strip()
+                        text = (await el.inner_text()).strip()
                         if text:
                             logger.info(f"  📅 页面日期摘要: {text[:100]}")
                             dates = re.findall(
@@ -764,7 +755,6 @@ class BookingScraper:
                 except Exception:
                     continue
 
-            # 方案 B：从搜索框的 value/placeholder 属性提取
             date_input_sels = [
                 'input[data-testid="searchbox-checkin"]',
                 'input[data-testid="searchbox-checkout"]',
@@ -777,7 +767,7 @@ class BookingScraper:
                 try:
                     el = await self.page.query_selector(sel)
                     if el:
-                        val = el.get_attribute("value") or el.get_attribute("placeholder") or ""
+                        val = (await el.get_attribute("value")) or (await el.get_attribute("placeholder")) or ""
                         if val and re.match(r'\d{4}-\d{2}-\d{2}', val):
                             if "checkin" in sel or "check-in" in sel.lower():
                                 checkin_date = val
@@ -786,7 +776,6 @@ class BookingScraper:
                 except Exception:
                     continue
 
-            # 方案 C：从页面 URL 参数提取
             current_url = self.page.url
             url_ci = re.search(r'checkin=(\d{4}-\d{2}-\d{2})', current_url)
             url_co = re.search(r'checkout=(\d{4}-\d{2}-\d{2})', current_url)
@@ -805,10 +794,8 @@ class BookingScraper:
         """从当前页面提取所有房源卡片数据"""
         await self._rand_delay(1, 2)
 
-        # ---- 从页面提取实际的预订日期 ----
         checkin_date, checkout_date = await self._extract_booking_dates(task)
 
-        # 尝试多种卡片选择器
         card_selectors = [
             '[data-testid="property-card"]',
             'div[data-testid="property-card"]',
@@ -837,18 +824,18 @@ class BookingScraper:
                     logger.info(f"  🔍 已保存第 1 张卡片 HTML → debug_card.html")
 
                 # ---- 名称提取 ----
-                name = self._extract_text(card, self.SELECTORS["card_title"])
+                name = await self._extract_text(card, self.SELECTORS["card_title"])
                 if not name or name == "N/A":
                     for tag in ["h3", "h2", "h4", "strong", "a"]:
-                        name = self._extract_text(card, [tag])
+                        name = await self._extract_text(card, [tag])
                         if name and name != "N/A" and len(name) > 2:
                             break
 
                 if not name or name == "N/A":
                     try:
-                        all_divs = card.query_selector_all('div')
+                        all_divs = await card.query_selector_all('div')
                         for div in all_divs:
-                            text = div.inner_text().strip()
+                            text = (await div.inner_text()).strip()
                             if text and 5 < len(text) < 150 and \
                                not re.search(r'^(?:CN¥|¥|€|US\$|Scored|\d+\.\d)',
                                              text):
@@ -857,14 +844,14 @@ class BookingScraper:
                     except Exception:
                         pass
 
-                # ---- 各项数据提取（ElementHandle 方法，同步调用） ----
-                price = self._extract_price(card)
-                room_type = self._extract_room_type(card)
-                link = self._extract_link(card)
-                location_desc = self._extract_location(card)
-                location_score = self._extract_location_score(card)
-                distance_to_centre = self._extract_distance_to_centre(card)
-                score = self._extract_score(card)
+                # ---- 各项数据提取 ----
+                price = await self._extract_price(card)
+                room_type = await self._extract_room_type(card)
+                link = await self._extract_link(card)
+                location_desc = await self._extract_location(card)
+                location_score = await self._extract_location_score(card)
+                distance_to_centre = await self._extract_distance_to_centre(card)
+                score = await self._extract_score(card)
 
                 record = {
                     "hotel_name": name,
@@ -959,18 +946,17 @@ class BookingScraper:
         for sel in self.SELECTORS["next_page_btn"]:
             try:
                 btn = await self.page.query_selector(sel)
-                if btn and btn.is_enabled():
+                if btn and await btn.is_enabled():
                     await btn.click()
                     await self._rand_delay(2, 4)
 
-                    # ---- 智能等待：替换固定 8s 等待 ----
-                    # 等待新一批房源卡片出现
+                    # ---- 智能等待：等待新一批房源卡片出现 ----
                     card_selector = self.SELECTORS["property_card"][0]
                     try:
                         await self.page.wait_for_selector(
                             card_selector, state="attached", timeout=10_000
                         )
-                        await asyncio.sleep(1.0)  # 短暂沉降
+                        await asyncio.sleep(1.0)
                         logger.info("  → 已翻到下一页")
                     except PlaywrightTimeout:
                         logger.warning("  ⚠ 翻页后未检测到新卡片，尝试回退等待 …")
@@ -983,7 +969,7 @@ class BookingScraper:
         logger.info("  → 没有更多页面可翻")
         return False
 
-    # ==================== 城市间休眠 ====================
+    # ==================== 城市间延迟 ====================
 
     async def _inter_city_delay(self):
         """城市间的随机异步延迟（15-30 秒），防止触发反爬虫"""
@@ -994,7 +980,6 @@ class BookingScraper:
         logger.info(
             f"\n⏳ 城市间延迟 {delay:.0f} 秒（防反爬策略）…"
         )
-
         await asyncio.sleep(delay)
         logger.info("  延迟结束，继续下一个城市 ✓\n")
 
@@ -1077,18 +1062,15 @@ class BookingScraper:
         await self._apply_stealth_to_context(city_ctx)
 
         try:
-            # 将实例的 page/context 指向当前城市的独立上下文
             saved_page = self.page
             saved_context = self.context
             self.page = city_page
             self.context = city_ctx
 
-            # 搜索该城市
             await self._search_city(task)
 
             city_results = []
 
-            # 逐页抓取
             for page_num in range(1, self.cfg.max_pages + 1):
                 logger.info(f"\n  ── 第 {page_num}/{self.cfg.max_pages} 页 ──")
 
@@ -1096,13 +1078,10 @@ class BookingScraper:
                 await self._dismiss_overlays()
 
                 page_cards = await self._extract_cards(task)
-
-                # 后处理：价格过滤
                 page_cards = self._process_records(page_cards, task)
 
                 city_results.extend(page_cards)
 
-                # 写入数据库（加锁保证并发安全）
                 if page_cards:
                     async with _db_lock:
                         insert_records(db_path, page_cards)
@@ -1121,7 +1100,6 @@ class BookingScraper:
             return city_results
 
         finally:
-            # 恢复主 page/context 引用
             self.page = saved_page
             self.context = saved_context
             await city_page.close()
@@ -1171,14 +1149,12 @@ class BookingScraper:
             self.pw = p
 
             try:
-                # 1. 启动浏览器
                 await self._launch_browser()
 
-                total_pages = 0
                 total_extracted = 0
 
                 if self.cfg.booking_concurrency == 1:
-                    # ---- 顺序模式（保留城市间延迟，与原行为一致） ----
+                    # ---- 顺序模式（保留城市间延迟） ----
                     for task_idx, task in enumerate(tasks):
                         city_results = await self._scrape_city_isolated(
                             task, db_path, task_idx, len(tasks)
@@ -1186,7 +1162,6 @@ class BookingScraper:
                         self.results.extend(city_results)
                         total_extracted += len(city_results)
 
-                        # 城市间休眠（最后一个城市之后不睡）
                         if task_idx < len(tasks) - 1:
                             await self._inter_city_delay()
                 else:
@@ -1207,7 +1182,6 @@ class BookingScraper:
                         self.results.extend(city_results)
                         total_extracted += len(city_results)
 
-                # 4. 保存 CSV/JSON
                 total_db = get_record_count(db_path)
                 logger.info(f"\n{'=' * 60}")
                 logger.info(f"  ✅ 全部完成！")

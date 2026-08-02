@@ -177,7 +177,7 @@ class FlightScraper:
             candidate_prices = []
             for el in all_spans:
                 try:
-                    text = (el.inner_text() or "").strip()  # ElementHandle.inner_text() 同步
+                    text = ((await el.inner_text()) or "").strip()
                 except Exception:
                     continue
                 if not text:
