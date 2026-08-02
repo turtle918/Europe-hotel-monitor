@@ -162,60 +162,96 @@ class FlightScraper:
             return float(m.group(1).replace(",", ""))
         return None
 
+    @staticmethod
+    def _parse_airline_info(card_text: str) -> str:
+        """从机票卡片文本中提取准确的航班号与中转信息"""
+        parts = []
+
+        # 航班号：如 FR8866 / FR 8866 / EK 302（两位字母 + 数字，排除机场代码与时间）
+        m_fn = re.search(r'\b([A-Z]{2})\s*(\d{1,4})\b', card_text)
+        if m_fn:
+            parts.append(f"{m_fn.group(1)} {m_fn.group(2)}")
+
+        # 中转信息：Nonstop / 直飞 / 1 stop (via X) / 1 次中转
+        m_stop = re.search(
+            r'(Nonstop|直飞|\d+\s*stop(?:s)?(?:\s*via\s+[A-Za-z.\- ]+)?|\d+\s*中转)',
+            card_text,
+            re.IGNORECASE,
+        )
+        if m_stop:
+            raw = m_stop.group(0).strip()
+            if re.match(r'\d+\s*stop', raw, re.IGNORECASE):
+                m_num = re.match(r'(\d+)\s*stop', raw, re.IGNORECASE)
+                m_via = re.search(r'via\s+([A-Za-z.\- ]+?)\s*$', raw, re.IGNORECASE)
+                stops_txt = f"{m_num.group(1)} 次中转"
+                if m_via:
+                    stops_txt += f"（经 {m_via.group(1).strip()}）"
+                parts.append(stops_txt)
+            elif raw.lower() == "nonstop":
+                parts.append("直飞")
+            else:
+                parts.append(raw)
+
+        # 兜底：未识别出航班号/中转时，仅标记为未知航班，杜绝无关字符串入库
+        if not parts:
+            parts.append("未知航班")
+
+        return " · ".join(parts)
+
     async def _extract_flight_prices(self, route: dict) -> list[dict]:
-        """从 Google Flights 结果页提取航班价格"""
+        """从 Google Flights 结果页按航班卡片提取价格、航班号、中转与预订链接"""
         await self._rand_delay(2, 3)
 
-        flights_found: list[dict] = []
         origin = route["origin"]
         dest = route["destination"]
         date = route["date"]
+        fallback_link = self._build_flight_url(route)
 
+        price_re = re.compile(r'(?:CN¥|¥|HK\$)\s*([\d,]{3,6}(?:\.\d{1,2})?)')
+
+        # 浏览器端一次性定位所有航班卡片（含价格的 li），取回文本与首个链接
         try:
-            # 扫描页面中所有包含价格模式的文本
-            all_spans = await self.page.query_selector_all("span, div, li")
-            candidate_prices = []
-            for el in all_spans:
-                try:
-                    text = ((await el.inner_text()) or "").strip()
-                except Exception:
-                    continue
-                if not text:
-                    continue
-                m = re.search(
-                    r'(?:CN¥|¥|HK\$|€|US\$)\s*([\d,]{3,6}(?:\.\d{1,2})?)',
-                    text
-                )
-                if m:
-                    price_val = float(m.group(1).replace(",", ""))
-                    if 500 <= price_val <= 100000:
-                        candidate_prices.append({
-                            "price_text": text.strip()[:100],
-                            "price_num": price_val,
-                        })
+            cards_data = await self.page.evaluate(
+                """() => {
+                    const priceRe = /(?:CN¥|¥|HK\\$)\\s*[\\d,]{3,6}(?:\\.\\d{1,2})?/;
+                    const lis = [...document.querySelectorAll('li')];
+                    const cards = lis.filter(li => priceRe.test(li.innerText || ''));
+                    return cards.slice(0, 15).map(li => {
+                        const a = li.querySelector('a[href]');
+                        return {
+                            text: (li.innerText || '').trim(),
+                            href: a ? a.href : null,
+                        };
+                    });
+                }"""
+            )
         except Exception:
-            candidate_prices = []
+            logger.warning("  ⚠ 浏览器端提取航班卡片失败，回退到全文扫描")
+            cards_data = []
 
-        # 去重（按价格数值）
-        seen_prices = set()
-        unique_flights = []
-        for item in candidate_prices:
-            if item["price_num"] not in seen_prices:
-                seen_prices.add(item["price_num"])
-                unique_flights.append(item)
+        flights_found: list[dict] = []
+        seen_prices: set = set()
 
-        # 只保留价格最低的前 5 条
-        unique_flights.sort(key=lambda x: x["price_num"])
-        unique_flights = unique_flights[:5]
+        for card in cards_data or []:
+            card_text = card.get("text", "")
+            m = price_re.search(card_text)
+            if not m:
+                continue
+            price_val = float(m.group(1).replace(",", ""))
+            if not (500 <= price_val <= 100000):
+                continue
+            if price_val in seen_prices:
+                continue
+            seen_prices.add(price_val)
 
-        for item in unique_flights:
             record = {
                 "origin": origin,
                 "destination": dest,
                 "flight_date": date,
-                "price_cny": str(item["price_num"]),
-                "price_num": item["price_num"],
-                "airline_info": item["price_text"],
+                "price_cny": str(price_val),
+                "price_num": price_val,
+                "airline_info": self._parse_airline_info(card_text),
+                "booking_link": card.get("href") or fallback_link,
                 "cabin_class": route.get("cabin_class", "economy"),
                 "adults": route.get("adults", 2),
                 "children": route.get("children", 1),
@@ -223,19 +259,16 @@ class FlightScraper:
             }
             flights_found.append(record)
             logger.info(
-                f"    ✈ {origin} → {dest} | "
-                f"¥{item['price_num']:,.0f} | {item['price_text'][:50]}"
+                f"    ✈ {origin} → {dest} | ¥{price_val:,.0f} | "
+                f"{record['airline_info'][:60]}"
             )
 
-        # 如果上述方案都没有找到，尝试直接读取页面可见文本提取价格
+        # 兜底：卡片解析失败时，从页面全文提取价格（标记来源，避免无关字符串）
         if not flights_found:
             logger.info("  尝试从页面全文提取价格 …")
             try:
                 body_text = await self.page.inner_text("body")
-                price_pattern = re.findall(
-                    r'(?:CN¥|¥|HK\$)\s*([\d,]{3,6}(?:\.\d{1,2})?)',
-                    body_text
-                )
+                price_pattern = price_re.findall(body_text)
                 seen = set()
                 for p in price_pattern:
                     val = float(p.replace(",", ""))
@@ -247,7 +280,8 @@ class FlightScraper:
                             "flight_date": date,
                             "price_cny": str(val),
                             "price_num": val,
-                            "airline_info": "页面全文提取",
+                            "airline_info": "价格（未知航班）",
+                            "booking_link": fallback_link,
                             "cabin_class": route.get("cabin_class", "economy"),
                             "adults": route.get("adults", 2),
                             "children": route.get("children", 1),
@@ -258,7 +292,9 @@ class FlightScraper:
             except Exception as e:
                 logger.error(f"  全文提取失败: {e}")
 
-        return flights_found
+        # 按价格从低到高排序，最多保留 5 条
+        flights_found.sort(key=lambda x: x["price_num"])
+        return flights_found[:5]
 
     # ==================== 主流程 ====================
 

@@ -512,7 +512,7 @@ with tab_flight:
         # ---- 机票汇总指标 ----
         with st.container(border=True):
             st.caption("✈️ 机票核心指标")
-            fc1, fc2, fc3, fc4 = st.columns(4)
+            fc1, fc2, fc3, fc4, fc5 = st.columns(5)
 
             n_routes = flight_df[["origin", "destination"]].drop_duplicates().shape[0]
             min_price = (
@@ -531,45 +531,53 @@ with tab_flight:
             fc2.metric("💰 最低票价", _fmt_price(min_price))
             fc3.metric("💸 最高票价", _fmt_price(max_price))
             fc4.metric("📊 总抓取记录", f"{total_flights:,}")
+            fc5.metric("🌐 数据来源", "Google Flights")
 
-        # ---- 机票价格柱状图 ----
+        # ---- 各航线最低票价柱状图 ----
         with st.container(border=True):
-            st.caption("📊 各航线机票价格对比")
+            st.caption("📊 各航线最低票价对比")
 
             if (
                 "price_num" in flight_df.columns
                 and "origin" in flight_df.columns
                 and "destination" in flight_df.columns
             ):
-                flight_df["route_label"] = (
-                    flight_df["origin"] + " → " + flight_df["destination"]
+                # 聚合：每个航线取最低票价（一条航线一根柱子，避免多行分组色块混乱）
+                route_min = (
+                    flight_df.groupby(["origin", "destination"], as_index=False)
+                    .agg(price_num=("price_num", "min"))
                 )
-                # 排序：按价格降序，让图表更易读
-                flight_df = flight_df.sort_values("price_num", ascending=True)
+                route_min["route_label"] = (
+                    route_min["origin"] + " → " + route_min["destination"]
+                )
+                # 排序：按最低票价从低到高，图表更易读
+                route_min = route_min.sort_values("price_num", ascending=True)
 
                 fig_flight = px.bar(
-                    flight_df,
+                    route_min,
                     x="route_label",
                     y="price_num",
                     color="route_label",
                     color_discrete_sequence=px.colors.qualitative.Pastel,
                     labels={
                         "route_label": "航线",
-                        "price_num": "价格 (CNY)",
+                        "price_num": "最低票价 (CNY)",
                     },
                     height=400,
                     text_auto=".0f",
                 )
                 fig_flight.update_layout(
-                    yaxis=dict(tickprefix="¥", tickformat=",d", title="价格 (CNY)"),
+                    yaxis=dict(
+                        tickprefix="¥", tickformat=",d", title="最低票价 (CNY)"
+                    ),
                     xaxis=dict(tickangle=-25, title=None),
                     showlegend=False,
                     margin=dict(l=40, r=20, t=40, b=60),
                 )
                 fig_flight.update_traces(
                     hovertemplate=(
-                        "价格: ¥%{y:,.0f}<br>"
-                        "航线: %{x}"
+                        "航线: %{x}<br>"
+                        "最低票价: ¥%{y:,.0f}"
                         "<extra></extra>"
                     ),
                     texttemplate="¥%{text:,.0f}",
@@ -587,6 +595,7 @@ with tab_flight:
                 "flight_date": "出发日期",
                 "price_cny": "价格 (CNY)",
                 "airline_info": "航班信息",
+                "booking_link": "预订链接",
                 "cabin_class": "舱位",
                 "adults": "成人",
                 "children": "儿童",
@@ -608,6 +617,9 @@ with tab_flight:
                     "出发日期": st.column_config.DateColumn(width="small"),
                     "价格 (CNY)": st.column_config.NumberColumn(width="small", format="¥%.0f"),
                     "航班信息": st.column_config.TextColumn(width="medium"),
+                    "预订链接": st.column_config.LinkColumn(
+                        width="medium", display_text="预订"
+                    ),
                     "舱位": st.column_config.TextColumn(width="small"),
                     "成人": st.column_config.NumberColumn(width="small", format="%d"),
                     "儿童": st.column_config.NumberColumn(width="small", format="%d"),

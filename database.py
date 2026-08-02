@@ -78,6 +78,9 @@ def init_db(db_path: str = "booking_data.db") -> str:
     finally:
         conn.close()
 
+    # 确保 flights 表结构一致（CI 合并机票库时需要 booking_link 列，防止列数不匹配）
+    init_flights_table(abs_path)
+
     return abs_path
 
 
@@ -188,6 +191,7 @@ def init_flights_table(db_path: str = "booking_data.db") -> str:
                 price_cny       TEXT,
                 price_num       REAL,
                 airline_info    TEXT,
+                booking_link    TEXT,
                 cabin_class     TEXT,
                 adults          INTEGER,
                 children        INTEGER,
@@ -198,6 +202,7 @@ def init_flights_table(db_path: str = "booking_data.db") -> str:
         # 向前兼容迁移
         _migrate_add_column(conn, "flights", "price_num", "REAL")
         _migrate_add_column(conn, "flights", "airline_info", "TEXT")
+        _migrate_add_column(conn, "flights", "booking_link", "TEXT")
         _migrate_add_column(conn, "flights", "cabin_class", "TEXT")
         _migrate_add_column(conn, "flights", "adults", "INTEGER")
         _migrate_add_column(conn, "flights", "children", "INTEGER")
@@ -229,10 +234,10 @@ def insert_flight_records(db_path: str, records: list[dict]) -> int:
         sql = """
             INSERT INTO flights
                 (origin, destination, flight_date, price_cny, price_num,
-                 airline_info, cabin_class, adults, children, scraped_at)
+                 airline_info, booking_link, cabin_class, adults, children, scraped_at)
             VALUES
                 (:origin, :destination, :flight_date, :price_cny, :price_num,
-                 :airline_info, :cabin_class, :adults, :children, :scraped_at)
+                 :airline_info, :booking_link, :cabin_class, :adults, :children, :scraped_at)
         """
         conn.executemany(sql, records)
         conn.commit()
