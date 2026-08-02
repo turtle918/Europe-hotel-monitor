@@ -376,6 +376,7 @@ with tab_hotel:
                     "ai_score_num": False,
                     "city": False,
                 },
+                custom_data=["detail_link", "hotel_name"],
                 labels={
                     "price_num": "价格 (CNY / 晚)",
                     "ai_score_num": "AI 综合评分",
@@ -386,7 +387,7 @@ with tab_hotel:
 
             fig.update_traces(
                 hovertemplate=(
-                    "%{customdata[0]}"
+                    "%{customdata[2]}"
                     "<extra></extra>"
                 ),
             )
@@ -409,7 +410,34 @@ with tab_hotel:
                 margin=dict(l=40, r=20, t=40, b=40),
             )
 
-            st.plotly_chart(fig, use_container_width=True)
+            selected_event = st.plotly_chart(
+                fig,
+                use_container_width=True,
+                on_select="rerun",
+                selection_mode="points",
+            )
+
+            # ---- 点击数据点 → 展示对应酒店详情链接 ----
+            selected_points = (
+                selected_event.selection.points
+                if selected_event and selected_event.selection
+                else []
+            )
+            if selected_points:
+                pt = selected_points[0]
+                customdata = (
+                    pt.get("customdata")
+                    if isinstance(pt, dict)
+                    else getattr(pt, "customdata", None) or []
+                )
+                link = customdata[0] if len(customdata) > 0 else None
+                name = customdata[1] if len(customdata) > 1 else "所选酒店"
+                if link:
+                    st.markdown("---")
+                    st.success(f"📍 已选酒店：**{name}**")
+                    st.link_button("🔗 打开酒店详情页", link, type="primary")
+            else:
+                st.caption("💡 点击散点图上的数据点，可在下方查看对应酒店的详情链接。")
 
     # ---- 酒店数据明细（折叠面板） ----
     with st.expander("📋 酒店数据明细", expanded=False):
