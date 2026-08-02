@@ -19,6 +19,7 @@ st.set_page_config(
     page_title="酒店房源监控看板",
     page_icon="🏨",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # 隐藏 Streamlit 默认顶部菜单栏和底部标志 + 微调样式
@@ -26,7 +27,6 @@ st.markdown("""
 <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
 
     /* 侧边栏 expander 间距紧凑 */
     [data-testid="stSidebar"] .stExpander {
@@ -158,6 +158,26 @@ with st.spinner("🔄 正在从数据库加载酒店数据 …"):
 if not df.empty:
     st.toast(f"✅ 数据加载完成，共 {len(df):,} 条酒店记录", icon="✅")
 
+# ==================== 城市名称中英文映射 ====================
+
+CITY_NAME_MAP = {
+    "Stuttgart": "斯图加特",
+    "Paris Chatelet": "巴黎",
+    "Milan Central Station": "米兰",
+    "Venice": "威尼斯",
+    "Florence Santa Maria Novella": "佛罗伦萨",
+    "Pienza": "皮恩扎",
+    "Barcelona": "巴塞罗那",
+    "Madrid": "马德里",
+}
+
+# 使用 map 将数据中的城市英文名翻译为中文名（未匹配到映射时保留英文原名）
+if not df.empty:
+    df["city"] = df["city"].map(CITY_NAME_MAP).fillna(df["city"])
+
+# 同步翻译 CONFIG_CITIES（供侧边栏筛选使用）
+CONFIG_CITIES_CN = [CITY_NAME_MAP.get(c, c) for c in CONFIG_CITIES]
+
 # ==================== 侧边栏 —— 筛选面板 ====================
 
 with st.sidebar:
@@ -167,8 +187,8 @@ with st.sidebar:
     with st.expander("🏙️ 城市选择", expanded=False):
         if not df.empty:
             db_cities = set(df["city"].dropna().unique())
-            available = [c for c in CONFIG_CITIES if c in db_cities]
-            extra = sorted(db_cities - set(CONFIG_CITIES))
+            available = [c for c in CONFIG_CITIES_CN if c in db_cities]
+            extra = sorted(db_cities - set(CONFIG_CITIES_CN))
             all_available = available + extra
 
             selected_cities = st.multiselect(
