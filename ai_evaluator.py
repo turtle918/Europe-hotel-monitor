@@ -6,27 +6,34 @@ AI 酒店位置评估器
 当 API Key 为占位符时，自动切换到本地启发式评分模式：
   - 综合 review_score、location_score、distance_to_centre 三个维度
   - 无需网络 / API 即可产出 1-10 的 AI 评分
+
+V2 更新：
+  - 所有城市评分请求并发发送（asyncio.gather + Semaphore）
+  - 异步 OpenAI 客户端（AsyncOpenAI）
+  - 增强错误处理：区分网络错误（可重试）与 API 错误（跳过）
+  - 指数退避重试机制
 """
 
+import asyncio
 import logging
 import os
 import re
 import sqlite3
-import time
 from pathlib import Path
 
 from config import ScraperConfig
 
-# OpenAI 客户端仅在 API Key 有效时才导入（避免未安装 openai 包时脚本崩溃）
-_OpenAI = None
+# OpenAI 异步客户端，仅在 API Key 有效时才导入（避免未安装 openai 包时脚本崩溃）
+_AsyncOpenAI = None
 
 
-def _get_openai_client():
-    """懒加载 OpenAI 客户端类"""
-    global _OpenAI
-    if _OpenAI is None:
-        from openai import OpenAI as _OpenAI
-    return _OpenAI
+def _get_async_openai_client_class():
+    """懒加载 AsyncOpenAI 客户端类"""
+    global _AsyncOpenAI
+    if _AsyncOpenAI is None:
+        from openai import AsyncOpenAI as _AsyncOpenAI
+    return _AsyncOpenAI
+
 
 # ==================== 日志 ====================
 logging.basicConfig(
@@ -40,6 +47,9 @@ logger = logging.getLogger("AIEvaluator")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # 从环境变量读取
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_MODEL = "deepseek-chat"
+
+# 并发控制：同时发送的最大请求数
+AI_CONCURRENCY = int(os.getenv("AI_CONCURRENCY", "5"))
 
 # ==================== 提示词 ====================
 SYSTEM_PROMPT = (
@@ -57,6 +67,20 @@ _PLACEHOLDER_PATTERNS = [
     "placeholder",
     "替换为你的",
 ]
+
+# 网络错误关键词（可重试的错误类型）
+_RETRYABLE_ERRORS = (
+    "ConnectionError",
+    "Connection reset",
+    "Timeout",
+    "timeout",
+    "Too Many Requests",
+    "RateLimitError",
+    "ServiceUnavailable",
+    "InternalServerError",
+    "APIConnectionError",
+    "APITimeoutError",
+)
 
 
 def get_db_path(db_file: str = "booking_data.db") -> str:
@@ -103,6 +127,23 @@ def _is_placeholder_api_key(key: str) -> bool:
     key_lower = key.lower()
     for pat in _PLACEHOLDER_PATTERNS:
         if pat.lower() in key_lower:
+            return True
+    return False
+
+
+# ==================== 错误分类 ====================
+
+def _is_retryable_error(error: Exception) -> bool:
+    """判断异常是否为可重试的网络错误（而非 API 参数/认证错误）"""
+    error_str = str(error)
+    # 检查错误消息中是否包含可重试关键词
+    for keyword in _RETRYABLE_ERRORS:
+        if keyword in error_str:
+            return True
+    # 检查异常类型名称
+    error_type = type(error).__name__
+    for keyword in _RETRYABLE_ERRORS:
+        if keyword in error_type:
             return True
     return False
 
@@ -170,7 +211,6 @@ def heuristic_score_for_hotel(row: dict) -> float:
         parts.append(rev)
         weights.append(0.50)
     elif rev is not None and rev > 10:
-        # 有些评分是百分制，缩放到 1-10
         parts.append(max(1.0, min(10.0, rev / 10.0)))
         weights.append(0.50)
 
@@ -186,9 +226,6 @@ def heuristic_score_for_hotel(row: dict) -> float:
     # 维度 3: distance_to_centre（越近分越高）
     dist = _parse_distance_miles(row.get("distance_to_centre"))
     if dist is not None:
-        # 距离 → 分数映射（英里）
-        # ≤0.3mi → 10, ≤0.5mi → 9, ≤1mi → 8, ≤1.5mi → 7,
-        # ≤2mi → 6, ≤3mi → 5, ≤5mi → 4, ≤10mi → 3, >10mi → 2
         if dist <= 0.3:
             dist_score = 10.0
         elif dist <= 0.5:
@@ -213,7 +250,6 @@ def heuristic_score_for_hotel(row: dict) -> float:
     if not parts:
         return 5.0  # 无数据时返回中等分数
 
-    # 加权平均，权重归一化
     total_weight = sum(weights)
     if total_weight == 0:
         return 5.0
@@ -283,46 +319,117 @@ def build_user_message(city_info: dict) -> str:
     return "\n".join(parts)
 
 
-def evaluate_city(city_info: dict, retries: int = 3) -> int | None:
-    """调用 DeepSeek API 评估一个城市的便利程度，返回 1-10 的整数分数"""
-    user_message = build_user_message(city_info)
-    city = city_info.get("city", "Unknown")
+# ==================== 异步 API 调用 ====================
 
-    OpenAI = _get_openai_client()
-    client = OpenAI(
+async def evaluate_city(
+    city_info: dict,
+    semaphore: asyncio.Semaphore,
+    max_retries: int = 3,
+) -> tuple[str, int | None, str | None]:
+    """异步调用 DeepSeek API 评估一个城市的便利程度
+
+    返回 (city_name, score, error_message) 三元组：
+      - score 为 None 表示评估失败
+      - error_message 仅在失败时非空
+
+    错误分类：
+      - 可重试错误（网络超时/连接重置/限速）：指数退避重试
+      - 不可重试错误（认证失败/参数错误）：立即放弃，不浪费重试次数
+    """
+    city = city_info.get("city", "Unknown")
+    user_message = build_user_message(city_info)
+
+    AsyncOpenAI = _get_async_openai_client_class()
+    client = AsyncOpenAI(
         api_key=DEEPSEEK_API_KEY,
         base_url=DEEPSEEK_BASE_URL,
+        timeout=30.0,  # 单次请求超时 30 秒
     )
 
-    for attempt in range(1, retries + 1):
-        try:
-            response = client.chat.completions.create(
-                model=DEEPSEEK_MODEL,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_message},
-                ],
-                temperature=0.3,
-                max_tokens=10,
-            )
+    async with semaphore:
+        last_error = None
 
-            raw = response.choices[0].message.content.strip()
-            m = re.search(r'\b(10|[1-9])\b', raw)
-            if m:
-                score = int(m.group(1))
-                logger.info(f"  ✓ {city} → {score} 分")
-                return score
-            else:
-                logger.warning(f"  ⚠ {city} 无法解析分数，原始输出: {raw[:80]}")
-                if attempt < retries:
-                    time.sleep(1)
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = await client.chat.completions.create(
+                    model=DEEPSEEK_MODEL,
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": user_message},
+                    ],
+                    temperature=0.3,
+                    max_tokens=10,
+                )
 
-        except Exception as e:
-            logger.error(f"  ✗ {city} API 调用失败 (第 {attempt} 次): {e}")
-            if attempt < retries:
-                time.sleep(2 ** attempt)
+                raw = response.choices[0].message.content.strip()
+                m = re.search(r'\b(10|[1-9])\b', raw)
+                if m:
+                    score = int(m.group(1))
+                    logger.info(f"  ✓ {city} → {score} 分")
+                    return (city, score, None)
+                else:
+                    logger.warning(f"  ⚠ {city} 无法解析分数，原始输出: {raw[:80]}")
+                    # 解析失败不是网络错误，直接放弃重试
+                    return (city, None, f"无法解析 API 输出: {raw[:80]}")
 
-    return None
+            except Exception as e:
+                last_error = e
+                error_str = str(e)
+
+                if _is_retryable_error(e):
+                    if attempt < max_retries:
+                        backoff = 2 ** attempt  # 指数退避：2s, 4s, 8s
+                        logger.warning(
+                            f"  ⚠ {city} 网络错误 (第 {attempt}/{max_retries} 次): "
+                            f"{type(e).__name__}: {error_str[:80]}"
+                        )
+                        logger.info(f"    将等待 {backoff}s 后重试 …")
+                        await asyncio.sleep(backoff)
+                        continue
+                    else:
+                        logger.error(
+                            f"  ✗ {city} 重试 {max_retries} 次后仍然失败: "
+                            f"{type(e).__name__}: {error_str[:80]}"
+                        )
+                else:
+                    # 不可重试错误（认证/参数等）：立即放弃
+                    logger.error(
+                        f"  ✗ {city} API 错误（不可重试）: "
+                        f"{type(e).__name__}: {error_str[:120]}"
+                    )
+                    break  # 不重试
+
+        return (city, None, f"{type(last_error).__name__}: {str(last_error)[:200]}")
+
+
+# ==================== 主入口 ====================
+
+async def run_async_evaluation(db_path: str, cities: list[dict]):
+    """异步并发评估所有城市，返回 (scored, failed, error_details)"""
+    semaphore = asyncio.Semaphore(AI_CONCURRENCY)
+
+    logger.info(f"  并发度: {AI_CONCURRENCY} | 城市数: {len(cities)}")
+
+    # 同时发起所有请求，semaphore 控制并发数
+    tasks = [evaluate_city(city_info, semaphore) for city_info in cities]
+    results = await asyncio.gather(*tasks)
+
+    scored = 0
+    failed = 0
+    error_details: list[tuple[str, str]] = []
+
+    for city_name, score, error_msg in results:
+        if score is not None:
+            updated = update_ai_score_for_city(db_path, city_name, score)
+            logger.info(f"  → 已更新 {updated} 条 {city_name} 酒店记录")
+            scored += 1
+        else:
+            logger.warning(f"  → 最终失败，跳过 {city_name}")
+            if error_msg:
+                error_details.append((city_name, error_msg))
+            failed += 1
+
+    return scored, failed, error_details
 
 
 def main():
@@ -342,7 +449,7 @@ def main():
     if _is_placeholder_api_key(DEEPSEEK_API_KEY):
         logger.warning("=" * 50)
         logger.warning("⚠️  DeepSeek API Key 为占位符，将使用本地启发式评分模式")
-        logger.warning("  如需 AI 评分，请在 ai_evaluator.py 中配置真实 API Key")
+        logger.warning("  如需 AI 评分，请在环境变量中配置真实 DEEPSEEK_API_KEY")
         logger.warning("  当前将综合 review_score + location_score + distance_to_centre 计算评分")
         logger.warning("=" * 50)
         run_heuristic_scoring(db_path)
@@ -356,28 +463,22 @@ def main():
         logger.info("CITY_TASKS 为空，退出。")
         return
 
-    # 3. 逐城市评分并批量写入对应酒店
-    scored = 0
-    failed = 0
-    for i, city_info in enumerate(cities):
-        city = city_info["city"]
-        logger.info(f"\n[{i + 1}/{len(cities)}] 评估: {city} ({city_info['notes']})")
+    # 3. 异步并发评分
+    logger.info(f"\n{'=' * 40}")
+    logger.info(f"  开始并发 AI 评分 (V2 · Async · DeepSeek)")
+    logger.info(f"{'=' * 40}")
 
-        score = evaluate_city(city_info)
-        if score is not None:
-            updated = update_ai_score_for_city(db_path, city, score)
-            logger.info(f"  → 已更新 {updated} 条酒店记录")
-            scored += 1
-        else:
-            logger.warning(f"  → 最终失败，跳过 {city}")
-            failed += 1
+    scored, failed, error_details = asyncio.run(
+        run_async_evaluation(db_path, cities)
+    )
 
-        # API 限速保护
-        if i < len(cities) - 1:
-            time.sleep(1)
-
+    # 4. 汇总报告
     logger.info(f"\n{'=' * 40}")
     logger.info(f"  评估完成：成功 {scored} 个城市，失败 {failed} 个")
+    if error_details:
+        logger.info(f"  失败详情:")
+        for city_name, err in error_details:
+            logger.info(f"    - {city_name}: {err[:150]}")
     logger.info(f"  数据库: {db_path}")
     logger.info(f"{'=' * 40}")
 
