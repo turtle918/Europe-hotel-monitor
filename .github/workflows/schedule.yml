@@ -35,6 +35,7 @@ jobs:
           sed -i 's/headless: bool = False/headless: bool = True/' config.py
           python booking_scraper.py
           python flight_scraper.py
+          python ai_evaluator.py
 
       - name: Configure Git
         run: |
