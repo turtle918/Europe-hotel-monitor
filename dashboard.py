@@ -183,6 +183,9 @@ CONFIG_CITIES_CN = [CITY_NAME_MAP.get(c, c) for c in CONFIG_CITIES]
 with st.sidebar:
     st.header("🔍 数据筛选")
 
+    # ---- 全局搜索 ----
+    search_query = st.sidebar.text_input("🔍 全局搜索", "")
+
     # ---- 城市选择 ----
     with st.expander("🏙️ 城市选择", expanded=False):
         if not df.empty:
@@ -285,6 +288,12 @@ if checkout_range is not None:
 
 price_mask = df["price_num"].isna() | (df["price_num"] <= max_price)
 mask &= price_mask
+
+# ---- 全局搜索：在酒店名称、地址、描述等所有文本列中匹配关键词 ----
+if search_query:
+    mask &= df.astype(str).apply(
+        lambda x: x.str.contains(search_query, case=False, na=False)
+    ).any(axis=1)
 
 filtered = df[mask].copy()
 
