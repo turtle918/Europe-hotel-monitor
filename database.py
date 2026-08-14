@@ -194,7 +194,6 @@ def init_flights_table(db_path: str = "booking_data.db") -> str:
                 booking_link    TEXT,
                 cabin_class     TEXT,
                 adults          INTEGER,
-                children        INTEGER,
                 scraped_at      TEXT    NOT NULL
             )
         """)
@@ -205,7 +204,6 @@ def init_flights_table(db_path: str = "booking_data.db") -> str:
         _migrate_add_column(conn, "flights", "booking_link", "TEXT")
         _migrate_add_column(conn, "flights", "cabin_class", "TEXT")
         _migrate_add_column(conn, "flights", "adults", "INTEGER")
-        _migrate_add_column(conn, "flights", "children", "INTEGER")
 
         # 索引
         conn.execute("""
@@ -234,10 +232,10 @@ def insert_flight_records(db_path: str, records: list[dict]) -> int:
         sql = """
             INSERT INTO flights
                 (origin, destination, flight_date, price_cny, price_num,
-                 airline_info, booking_link, cabin_class, adults, children, scraped_at)
+                 airline_info, booking_link, cabin_class, adults, scraped_at)
             VALUES
                 (:origin, :destination, :flight_date, :price_cny, :price_num,
-                 :airline_info, :booking_link, :cabin_class, :adults, :children, :scraped_at)
+                 :airline_info, :booking_link, :cabin_class, :adults, :scraped_at)
         """
         conn.executemany(sql, records)
         conn.commit()

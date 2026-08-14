@@ -285,7 +285,6 @@ class FlightScraper:
                 "booking_link": card.get("href") or fallback_link,
                 "cabin_class": route.get("cabin_class", "economy"),
                 "adults": route.get("adults", 2),
-                "children": route.get("children", 1),
                 "scraped_at": self._start_time,
             }
             flights_found.append(record)
@@ -315,7 +314,6 @@ class FlightScraper:
                             "booking_link": fallback_link,
                             "cabin_class": route.get("cabin_class", "economy"),
                             "adults": route.get("adults", 2),
-                            "children": route.get("children", 1),
                             "scraped_at": self._start_time,
                         }
                         flights_found.append(record)

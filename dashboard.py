@@ -161,14 +161,15 @@ if not df.empty:
 # ==================== 城市名称中英文映射 ====================
 
 CITY_NAME_MAP = {
-    "Stuttgart": "斯图加特",
+    "Stuttgart City Centre": "斯图加特",
     "Paris Chatelet": "巴黎",
+    "Nice City Centre": "尼斯",
     "Milan Central Station": "米兰",
     "Venice": "威尼斯",
     "Florence Santa Maria Novella": "佛罗伦萨",
     "Pienza": "皮恩扎",
-    "Barcelona": "巴塞罗那",
-    "Madrid": "马德里",
+    "Barcelona City Centre": "巴塞罗那",
+    "Madrid City Centre": "马德里",
 }
 
 # 使用 map 将数据中的城市英文名翻译为中文名（未匹配到映射时保留英文原名）
@@ -604,7 +605,6 @@ with tab_flight:
                 "booking_link": "预订链接",
                 "cabin_class": "舱位",
                 "adults": "成人",
-                "children": "儿童",
                 "scraped_at": "抓取时间",
             }
             flight_available = [c for c in flight_display_cols if c in flight_df.columns]
@@ -628,7 +628,6 @@ with tab_flight:
                     ),
                     "舱位": st.column_config.TextColumn(width="small"),
                     "成人": st.column_config.NumberColumn(width="small", format="%d"),
-                    "儿童": st.column_config.NumberColumn(width="small", format="%d"),
                     "抓取时间": st.column_config.DatetimeColumn(width="small"),
                 },
             )

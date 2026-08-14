@@ -3,8 +3,8 @@ Booking.com 爬虫配置文件
 修改此文件中的参数来定制爬取行为
 
 核心改动（V5）：
-  - 默认搜索参数：2 成人 + 1 儿童（年龄可配置）
-  - 新增 EUROPE_TRIP_CITIES 欧洲多城市旅行计划模板（8 个城市）
+  - 默认搜索参数：2 成人（不含儿童）
+  - 新增 EUROPE_TRIP_CITIES 欧洲多城市旅行计划模板（9 个城市）
   - 移除 price_per_score（性价比）逻辑
   - 新增 location_score（位置评分）和 distance_to_centre（距市中心距离）字段
   - 三个筛选开关：三人间/家庭房 / 免费取消 / 空调
@@ -21,8 +21,6 @@ class ScraperConfig:
     # 这些是全局默认值，CITY_TASKS 中每个任务可以单独覆盖
 
     default_adults: int = 2
-    default_children: int = 1
-    default_children_ages: list[int] = [12]  # 儿童年龄，可随时修改
     default_rooms: int = 1
 
     # ==================== 抓取日期范围 ====================
@@ -30,118 +28,100 @@ class ScraperConfig:
     SCRAPE_DATE_MIN: str = "2027-07-01"
     SCRAPE_DATE_MAX: str = "2027-08-15"
 
-    # ==================== 儿童年龄（URL 参数用） ====================
-    # Booking.com 要求指定每个儿童的年龄，以逗号分隔
-    # 例如：一个 12 岁儿童 → "12"；两个儿童（10 岁和 8 岁）→ "10,8"
-
-    @property
-    def children_ages_param(self) -> str:
-        """将 children_ages 列表转为 URL 参数格式"""
-        return ",".join(str(age) for age in self.default_children_ages)
-
     # ==================== 欧洲多城市旅行计划模板 ====================
     # EUROPE_TRIP_CITIES：完整的欧洲旅行城市清单
     # 这是一个清晰的字典数组结构，方便你填入整个旅行计划的所有城市
     # 每个城市的字段说明：
-    #   city          - 城市/区域名称（Booking.com 搜索关键词）
+    #   city          - 城市/区域名称（Booking.com 搜索关键词，含具体位置）
     #   checkin       - 入住日期 (YYYY-MM-DD)
     #   checkout      - 退房日期 (YYYY-MM-DD)
     #   adults        - 成人数量（默认 2）
-    #   children      - 儿童数量（默认 1）
-    #   children_ages - 儿童年龄列表（默认 [12]，覆盖全局默认）
     #   rooms         - 房间数（默认 1）
     #   max_price_cny - 整个入住期间的总预算（人民币），null 表示不过滤
-    #   notes         - 备注（仅用于你自己记录，不影响爬虫）
+    #   notes         - 备注（记录住宿种类 / 具体位置，不影响爬虫）
 
     # max_price_cny 现在是整个入住期间的总预算（按每晚上限 ¥1,500 × 入住天数计算）
     EUROPE_TRIP_CITIES: list[dict] = [
         {
-            "city": "Stuttgart",
-            "checkin": "2027-07-25",
-            "checkout": "2027-07-27",
+            "city": "Stuttgart City Centre",
+            "checkin": "2027-07-23",
+            "checkout": "2027-07-25",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
             "max_price_cny": 3000,
-            "notes": "德国 · 斯图加特",
+            "notes": "德国 · 斯图加特市区酒店（2 晚）",
         },
         {
             "city": "Paris Chatelet",
-            "checkin": "2027-07-27",
-            "checkout": "2027-07-30",
+            "checkin": "2027-07-25",
+            "checkout": "2027-07-28",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
             "max_price_cny": 4500,
-            "notes": "法国 · 巴黎夏特雷",
+            "notes": "法国 · 巴黎夏特雷附近酒店（3 晚）",
+        },
+        {
+            "city": "Nice City Centre",
+            "checkin": "2027-07-28",
+            "checkout": "2027-07-31",
+            "adults": 2,
+            "rooms": 1,
+            "max_price_cny": 4500,
+            "notes": "法国 · 尼斯市区酒店（3 晚）",
         },
         {
             "city": "Milan Central Station",
-            "checkin": "2027-07-30",
-            "checkout": "2027-08-02",
+            "checkin": "2027-07-31",
+            "checkout": "2027-08-01",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
-            "max_price_cny": 4500,
-            "notes": "意大利 · 米兰中央火车站",
+            "max_price_cny": 1500,
+            "notes": "意大利 · 米兰中央火车站附近酒店（1 晚）",
         },
         {
             "city": "Venice",
-            "checkin": "2027-08-02",
-            "checkout": "2027-08-05",
+            "checkin": "2027-08-01",
+            "checkout": "2027-08-04",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
             "max_price_cny": 4500,
-            "notes": "意大利 · 威尼斯主岛",
+            "notes": "意大利 · 威尼斯主岛酒店（3 晚）",
         },
         {
             "city": "Florence Santa Maria Novella",
-            "checkin": "2027-08-05",
-            "checkout": "2027-08-08",
+            "checkin": "2027-08-04",
+            "checkout": "2027-08-06",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
-            "max_price_cny": 4500,
-            "notes": "意大利 · 佛罗伦萨火车站",
+            "max_price_cny": 3000,
+            "notes": "意大利 · 佛罗伦萨新圣母玛利亚火车站附近酒店（2 晚）",
         },
         {
             "city": "Pienza",
-            "checkin": "2027-08-08",
-            "checkout": "2027-08-10",
+            "checkin": "2027-08-06",
+            "checkout": "2027-08-09",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
-            "rooms": 1,
-            "max_price_cny": 3000,
-            "notes": "意大利 · 皮恩扎",
-        },
-        {
-            "city": "Barcelona",
-            "checkin": "2027-08-10",
-            "checkout": "2027-08-13",
-            "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
             "max_price_cny": 4500,
-            "notes": "西班牙 · 巴塞罗那",
+            "notes": "意大利 · 皮恩扎托斯卡纳农庄（3 晚）",
         },
         {
-            "city": "Madrid",
-            "checkin": "2027-08-13",
+            "city": "Barcelona City Centre",
+            "checkin": "2027-08-09",
+            "checkout": "2027-08-12",
+            "adults": 2,
+            "rooms": 1,
+            "max_price_cny": 4500,
+            "notes": "西班牙 · 巴塞罗那市区酒店（3 晚）",
+        },
+        {
+            "city": "Madrid City Centre",
+            "checkin": "2027-08-12",
             "checkout": "2027-08-15",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "rooms": 1,
-            "max_price_cny": 3000,
-            "notes": "西班牙 · 马德里",
+            "max_price_cny": 4500,
+            "notes": "西班牙 · 马德里市区酒店（3 晚）",
         },
     ]
 
@@ -229,8 +209,6 @@ class ScraperConfig:
     #   destination   - 到达城市/机场代码
     #   date          - 出发日期 (YYYY-MM-DD)
     #   adults        - 成人数量
-    #   children      - 儿童数量
-    #   children_ages - 儿童年龄列表
     #   cabin_class   - 舱位：economy / premium_economy / business / first
     #   notes         - 备注
 
@@ -240,8 +218,6 @@ class ScraperConfig:
             "destination": "Frankfurt FRA",
             "date": "2027-07-25",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "cabin_class": "economy",
             "notes": "香港 → 法兰克福",
         },
@@ -250,8 +226,6 @@ class ScraperConfig:
             "destination": "Barcelona BCN",
             "date": "2027-08-08",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "cabin_class": "economy",
             "notes": "佛罗伦萨 → 巴塞罗那",
         },
@@ -260,8 +234,6 @@ class ScraperConfig:
             "destination": "Barcelona BCN",
             "date": "2027-08-08",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "cabin_class": "economy",
             "notes": "比萨 → 巴塞罗那（备选）",
         },
@@ -270,8 +242,6 @@ class ScraperConfig:
             "destination": "Hong Kong HKG",
             "date": "2027-08-15",
             "adults": 2,
-            "children": 1,
-            "children_ages": [12],
             "cabin_class": "economy",
             "notes": "马德里 → 香港",
         },

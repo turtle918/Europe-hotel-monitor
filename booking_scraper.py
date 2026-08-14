@@ -2,7 +2,7 @@
 Booking.com 房源爬虫 V5
 功能：
   - 按欧洲多城市任务列表依次/并发搜索
-  - 默认搜索 2 成人 + 1 儿童（年龄可配置）
+  - 默认搜索 2 成人（不含儿童）
   - 直接抓取人民币（CNY）价格
   - 灵活筛选：双床房 / 免费取消 / 空调
   - 按城市 max_price_cny 自动过滤高价房源
@@ -277,18 +277,13 @@ class BookingScraper:
     def _build_search_url(task: dict) -> str:
         """根据任务参数构建搜索 URL（人民币 CNY）"""
         adults = task.get("adults", 2)
-        children = task.get("children", 1)
         rooms = task.get("rooms", 1)
-        children_ages = task.get("children_ages", [12])
-        ages_param = ",".join(str(age) for age in children_ages)
 
         params = [
             f"ss={task['city'].replace(' ', '+')}",
             f"checkin={task['checkin']}",
             f"checkout={task['checkout']}",
             f"group_adults={adults}",
-            f"group_children={children}",
-            f"req_children_ages={ages_param}",
             f"no_rooms={rooms}",
             "selected_currency=CNY",
             "lang=en-us",
@@ -301,12 +296,10 @@ class BookingScraper:
         """导航到指定城市的搜索结果页"""
         city = task["city"]
         adults = task.get("adults", self.cfg.default_adults)
-        children = task.get("children", self.cfg.default_children)
-        ages = task.get("children_ages", self.cfg.default_children_ages)
         logger.info(
             f"▸ 搜索: {city} | "
             f"{task['checkin']} → {task['checkout']} | "
-            f"{adults} 成人 + {children} 儿童（{ages} 岁）| "
+            f"{adults} 成人 | "
             f"最高 ¥{task.get('max_price_cny', '—')}/晚"
         )
 
@@ -1034,13 +1027,12 @@ class BookingScraper:
         city_name = task["city"]
         max_price = task.get("max_price_cny", "—")
         adults = task.get("adults", self.cfg.default_adults)
-        children = task.get("children", self.cfg.default_children)
 
         logger.info(f"\n{'=' * 60}")
         logger.info(f"  🌍 城市 {task_idx + 1}/{total}: {city_name}")
         logger.info(
             f"     {task['checkin']} → {task['checkout']} | "
-            f"{adults} 成人 + {children} 儿童 | "
+            f"{adults} 成人 | "
             f"最高 ¥{max_price}/晚"
         )
         logger.info(f"{'=' * 60}")
@@ -1138,8 +1130,7 @@ class BookingScraper:
         logger.info(f"  长途旅行计划爬虫启动 (V5 · Async · CNY · 位置评分)")
         logger.info(f"  共 {len(tasks)} 个城市 | 每个最多 {self.cfg.max_pages} 页")
         logger.info(f"  并发度: {self.cfg.booking_concurrency} | 日期范围: {date_min} ~ {date_max}")
-        logger.info(f"  默认搜索: {self.cfg.default_adults} 成人 + "
-                    f"{self.cfg.default_children} 儿童（{self.cfg.children_ages_param} 岁）")
+        logger.info(f"  默认搜索: {self.cfg.default_adults} 成人")
         logger.info(f"  筛选: 三人间/家庭房={self.cfg.filter_triple_or_family} | "
                     f"免费取消={self.cfg.filter_free_cancellation} | "
                     f"空调={self.cfg.filter_air_conditioning}")
