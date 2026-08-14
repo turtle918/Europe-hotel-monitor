@@ -45,7 +45,7 @@ logger = logging.getLogger("AIEvaluator")
 
 # ==================== Google Gemini 配置 ====================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # 从环境变量读取
-GEMINI_MODEL = "gemini-1.5-pro"
+GEMINI_MODEL = "gemini-2.5-pro"
 
 # 并发控制：同时发送的最大请求数
 AI_CONCURRENCY = int(os.getenv("AI_CONCURRENCY", "5"))
