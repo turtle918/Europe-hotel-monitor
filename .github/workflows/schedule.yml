@@ -71,8 +71,8 @@ jobs:
           name: flight-db
           path: booking_data.db
 
-  # ==================== Job 3: 合并 & AI 评分 & 提交 ====================
-  evaluate-and-commit:
+  # ==================== Job 3: 合并 & 提交 ====================
+  merge-and-commit:
     needs: [scrape-hotels, scrape-flights]
     runs-on: ubuntu-latest
 
@@ -105,12 +105,6 @@ jobs:
         run: |
           sqlite3 booking_data.db "ATTACH DATABASE 'flight-db/booking_data.db' AS flight_db; INSERT OR IGNORE INTO flights SELECT * FROM flight_db.flights;"
 
-      - name: Run AI evaluator
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: |
-          python ai_evaluator.py
-
       - name: Configure Git
         run: |
           git config user.name "GitHub Action"
@@ -118,6 +112,6 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git add booking_data.db booking_results.csv
+          git add booking_data.db
           git diff --staged --quiet || git commit -m "chore: update hotel and flight data [skip ci]"
           git push
