@@ -344,6 +344,13 @@ async def evaluate_city(
         api_key=DEEPSEEK_API_KEY,
         base_url=DEEPSEEK_BASE_URL,
         timeout=30.0,  # 单次请求超时 30 秒
+        default_headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        },
     )
 
     async with semaphore:
@@ -358,10 +365,23 @@ async def evaluate_city(
                         {"role": "user", "content": user_message},
                     ],
                     temperature=0.3,
-                    max_tokens=10,
+                    max_tokens=4096,
                 )
 
-                raw = response.choices[0].message.content.strip()
+                # 读取模型最终回答文本。DeepSeek V4 思考模式的推理过程存放在
+                # reasoning_content 字段，真正的答案仍在 content 字段；max_tokens
+                # 太小会导致思考过程耗尽全部额度，content 变成空。
+                content = response.choices[0].message.content
+                raw = (content or "").strip()
+
+                # 模型返回空文字：打印完整 response 对象，便于定位是额度耗尽
+                # 还是字段缺失（而非静默跳过）。
+                if not raw:
+                    logger.error(
+                        f"  ✗ {city} 模型返回空文字，完整响应对象如下:\n{response}"
+                    )
+                    return (city, None, "模型返回空文字（完整响应已打印到日志）")
+
                 m = re.search(r'\b(10|[1-9])\b', raw)
                 if m:
                     score = int(m.group(1))
