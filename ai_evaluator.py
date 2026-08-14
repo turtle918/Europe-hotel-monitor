@@ -1,6 +1,6 @@
 """
 AI 酒店位置评估器
-从 config.py 的 CITY_TASKS 读取城市数据，调用 DeepSeek API 评估每个城市
+从 config.py 的 CITY_TASKS 读取城市数据，调用 Google Gemini API 评估每个城市
 的便利程度（1-10），结果写入 hotels 表中对应城市的所有酒店行。
 
 当 API Key 为占位符时，自动切换到本地启发式评分模式：
@@ -9,7 +9,7 @@ AI 酒店位置评估器
 
 V2 更新：
   - 所有城市评分请求并发发送（asyncio.gather + Semaphore）
-  - 异步 OpenAI 客户端（AsyncOpenAI）
+  - Google Gemini 异步客户端（google-generativeai）
   - 增强错误处理：区分网络错误（可重试）与 API 错误（跳过）
   - 指数退避重试机制
 """
@@ -23,16 +23,16 @@ from pathlib import Path
 
 from config import ScraperConfig
 
-# OpenAI 异步客户端，仅在 API Key 有效时才导入（避免未安装 openai 包时脚本崩溃）
-_AsyncOpenAI = None
+# Google Gemini 客户端，仅在需要时才导入（避免未安装 google-generativeai 包时脚本崩溃）
+_genai = None
 
 
-def _get_async_openai_client_class():
-    """懒加载 AsyncOpenAI 客户端类"""
-    global _AsyncOpenAI
-    if _AsyncOpenAI is None:
-        from openai import AsyncOpenAI as _AsyncOpenAI
-    return _AsyncOpenAI
+def _get_genai():
+    """懒加载 google.generativeai 模块"""
+    global _genai
+    if _genai is None:
+        import google.generativeai as _genai
+    return _genai
 
 
 # ==================== 日志 ====================
@@ -43,10 +43,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("AIEvaluator")
 
-# ==================== DeepSeek 配置 ====================
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # 从环境变量读取
-DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-DEEPSEEK_MODEL = "deepseek-v4-pro"
+# ==================== Google Gemini 配置 ====================
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # 从环境变量读取
+GEMINI_MODEL = "gemini-1.5-pro"
 
 # 并发控制：同时发送的最大请求数
 AI_CONCURRENCY = int(os.getenv("AI_CONCURRENCY", "5"))
@@ -60,10 +59,10 @@ SYSTEM_PROMPT = (
 
 # 占位符 API Key 特征（用于检测用户是否已配置真实 Key）
 _PLACEHOLDER_PATTERNS = [
-    "sk-xxxxxxxx",
     "your-api-key",
     "your_api_key",
-    "sk-your-",
+    "your-gemini-key",
+    "your_gemini_key",
     "placeholder",
     "替换为你的",
 ]
@@ -72,14 +71,21 @@ _PLACEHOLDER_PATTERNS = [
 _RETRYABLE_ERRORS = (
     "ConnectionError",
     "Connection reset",
+    "ConnectionResetError",
     "Timeout",
     "timeout",
+    "DeadlineExceeded",
     "Too Many Requests",
-    "RateLimitError",
+    "ResourceExhausted",
+    "RateLimit",
     "ServiceUnavailable",
     "InternalServerError",
+    "GoogleAPIError",
     "APIConnectionError",
     "APITimeoutError",
+    "429",
+    "500",
+    "503",
 )
 
 
@@ -128,6 +134,9 @@ def _is_placeholder_api_key(key: str) -> bool:
     for pat in _PLACEHOLDER_PATTERNS:
         if pat.lower() in key_lower:
             return True
+    # Gemini API Key 均以 "AIza" 开头，其余格式视为占位符/无效 Key
+    if not key_lower.startswith("aiza"):
+        return True
     return False
 
 
@@ -319,6 +328,47 @@ def build_user_message(city_info: dict) -> str:
     return "\n".join(parts)
 
 
+def _extract_score(raw: str) -> int | None:
+    """从 Gemini 输出中提取 1-10 的整数分数。
+
+    兼容多种常见输出格式：
+      "8" / "8分" / "评分：8" / "8/10" / "8 out of 10" / "八分"
+    """
+    if not raw:
+        return None
+    text = raw.strip()
+
+    # 1) "X/10" 或 "X out of 10"：优先取分子，避免误取分母里的 10
+    m = re.search(r'(\d+(?:\.\d+)?)\s*/\s*10', text)
+    if m:
+        val = float(m.group(1))
+        if 1 <= val <= 10:
+            return int(round(val))
+
+    # 2) "X分" / "X points"
+    m = re.search(r'(\d+(?:\.\d+)?)\s*(?:分|points?)', text, re.IGNORECASE)
+    if m:
+        val = float(m.group(1))
+        if 1 <= val <= 10:
+            return int(round(val))
+
+    # 3) 独立数字 1-10
+    m = re.search(r'\b(10|[1-9])\b', text)
+    if m:
+        return int(m.group(1))
+
+    # 4) 汉字数字（应对模型偶尔用中文输出）
+    zh_map = {
+        "十": 10, "九": 9, "八": 8, "七": 7, "六": 6,
+        "五": 5, "四": 4, "三": 3, "二": 2, "一": 1, "零": 0,
+    }
+    for zh, num in zh_map.items():
+        if zh in text:
+            return num
+
+    return None
+
+
 # ==================== 异步 API 调用 ====================
 
 async def evaluate_city(
@@ -326,7 +376,7 @@ async def evaluate_city(
     semaphore: asyncio.Semaphore,
     max_retries: int = 3,
 ) -> tuple[str, int | None, str | None]:
-    """异步调用 DeepSeek API 评估一个城市的便利程度
+    """异步调用 Google Gemini API 评估一个城市的便利程度
 
     返回 (city_name, score, error_message) 三元组：
       - score 为 None 表示评估失败
@@ -339,42 +389,31 @@ async def evaluate_city(
     city = city_info.get("city", "Unknown")
     user_message = build_user_message(city_info)
 
-    AsyncOpenAI = _get_async_openai_client_class()
-    client = AsyncOpenAI(
-        api_key=DEEPSEEK_API_KEY,
-        base_url=DEEPSEEK_BASE_URL,
-        timeout=30.0,  # 单次请求超时 30 秒
-        default_headers={
-            "User-Agent": (
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0.0.0 Safari/537.36"
-            )
-        },
-    )
+    genai = _get_genai()
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel(GEMINI_MODEL, system_instruction=SYSTEM_PROMPT)
 
     async with semaphore:
         last_error = None
 
         for attempt in range(1, max_retries + 1):
             try:
-                response = await client.chat.completions.create(
-                    model=DEEPSEEK_MODEL,
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": user_message},
-                    ],
-                    temperature=0.3,
-                    max_tokens=4096,
+                response = await model.generate_content_async(
+                    contents=user_message,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.3,
+                        max_output_tokens=256,
+                    ),
                 )
 
-                # 读取模型最终回答文本。DeepSeek V4 思考模式的推理过程存放在
-                # reasoning_content 字段，真正的答案仍在 content 字段；max_tokens
-                # 太小会导致思考过程耗尽全部额度，content 变成空。
-                content = response.choices[0].message.content
-                raw = (content or "").strip()
+                # 读取模型最终回答文本（数字分数）。被安全策略拦截时 text 可能为空。
+                raw = ""
+                try:
+                    raw = (response.text or "").strip()
+                except Exception:
+                    raw = ""
 
-                # 模型返回空文字：打印完整 response 对象，便于定位是额度耗尽
+                # 模型返回空文字：打印完整 response 对象，便于定位是被安全拦截
                 # 还是字段缺失（而非静默跳过）。
                 if not raw:
                     logger.error(
@@ -382,9 +421,8 @@ async def evaluate_city(
                     )
                     return (city, None, "模型返回空文字（完整响应已打印到日志）")
 
-                m = re.search(r'\b(10|[1-9])\b', raw)
-                if m:
-                    score = int(m.group(1))
+                score = _extract_score(raw)
+                if score is not None:
                     logger.info(f"  ✓ {city} → {score} 分")
                     return (city, score, None)
                 else:
@@ -466,10 +504,10 @@ def main():
         logger.info(f"  {i + 1}. {c['city']} ({c['notes']}) — 数据库 {hotel_count} 条记录")
 
     # ---- 检测 API Key 是否为占位符 ----
-    if _is_placeholder_api_key(DEEPSEEK_API_KEY):
+    if _is_placeholder_api_key(GEMINI_API_KEY):
         logger.warning("=" * 50)
-        logger.warning("⚠️  DeepSeek API Key 为占位符，将使用本地启发式评分模式")
-        logger.warning("  如需 AI 评分，请在环境变量中配置真实 DEEPSEEK_API_KEY")
+        logger.warning("⚠️  GEMINI_API_KEY 为占位符，将使用本地启发式评分模式")
+        logger.warning("  如需 AI 评分，请在环境变量中配置真实 GEMINI_API_KEY")
         logger.warning("  当前将综合 review_score + location_score + distance_to_centre 计算评分")
         logger.warning("=" * 50)
         run_heuristic_scoring(db_path)
@@ -485,7 +523,7 @@ def main():
 
     # 3. 异步并发评分
     logger.info(f"\n{'=' * 40}")
-    logger.info(f"  开始并发 AI 评分 (V2 · Async · DeepSeek)")
+    logger.info(f"  开始并发 AI 评分 (V2 · Async · Gemini)")
     logger.info(f"{'=' * 40}")
 
     scored, failed, error_details = asyncio.run(

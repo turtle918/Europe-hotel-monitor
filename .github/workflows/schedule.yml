@@ -105,6 +105,12 @@ jobs:
         run: |
           sqlite3 booking_data.db "ATTACH DATABASE 'flight-db/booking_data.db' AS flight_db; INSERT OR IGNORE INTO flights SELECT * FROM flight_db.flights;"
 
+      - name: Run AI evaluator
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python ai_evaluator.py
+
       - name: Configure Git
         run: |
           git config user.name "GitHub Action"
