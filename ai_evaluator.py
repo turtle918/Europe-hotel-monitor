@@ -46,7 +46,7 @@ logger = logging.getLogger("AIEvaluator")
 # ==================== DeepSeek 配置 ====================
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")  # 从环境变量读取
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
-DEEPSEEK_MODEL = "deepseek-v4-flash"
+DEEPSEEK_MODEL = "deepseek-v4-pro"
 
 # 并发控制：同时发送的最大请求数
 AI_CONCURRENCY = int(os.getenv("AI_CONCURRENCY", "5"))
