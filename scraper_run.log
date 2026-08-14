@@ -1,0 +1,509 @@
+20:05:07 | INFO    | \u2713 数据库已就绪: D:\europe-hotel-monitor\booking_data.db
+20:05:07 | INFO    | \u2713 机票数据表已就绪: D:\europe-hotel-monitor\booking_data.db
+20:05:07 | INFO    | 
+============================================================
+20:05:07 | INFO    |   长途旅行计划爬虫启动 (V5 · Async · CNY · 位置评分)
+20:05:07 | INFO    |   共 9 个城市 | 每个最多 3 页
+20:05:07 | INFO    |   并发度: 1 | 日期范围: 2027-07-01 ~ 2027-08-15
+20:05:07 | INFO    |   默认搜索: 2 成人
+20:05:07 | INFO    |   筛选: 三人间/家庭房=True | 免费取消=True | 空调=True
+20:05:07 | INFO    | ============================================================
+
+20:05:08 | INFO    | \u25b8 启动浏览器 …
+20:05:08 | INFO    |   使用本地 Edge
+20:05:09 | INFO    |   Stealth 补丁 + 指纹伪装 已注入
+20:05:09 | INFO    | 
+============================================================
+20:05:09 | INFO    |   \U0001f30d 城市 1/9: Stuttgart City Centre
+20:05:09 | INFO    |      2027-07-23 → 2027-07-25 | 2 成人 | 最高 \xa53000/晚
+20:05:09 | INFO    | ============================================================
+20:05:09 | INFO    | \u25b8 搜索: Stuttgart City Centre | 2027-07-23 → 2027-07-25 | 2 成人 | 最高 \xa53000/晚
+20:05:09 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Stuttgart+City+Centre&checkin=2027-07-23&checkout=2027-07-25&group_adults=2&no_rooms=1&selected_currency…
+20:05:25 | INFO    |   \u2713 页面网络空闲
+20:05:26 | INFO    |   \u2713 检测到房源卡片容器
+20:05:26 | INFO    | 
+  ── 第 1/3 页 ──
+20:05:46 | INFO    |   \U0001f4c5 预订日期: 2027-07-23 → 2027-07-25
+20:05:46 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 26 个房源卡片
+20:05:46 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:05:47 | INFO    |     \u2713 Premier Inn Stuttgart City Centre | \xa55,359 | \u2b508.2
+20:05:48 | INFO    |     \u2713 Apartments U37 | \xa5619 | \u2b508.8
+20:05:49 | INFO    |     \u2713 LOGINN Hotel Waiblingen | \xa5674 | \u2b508.5
+20:05:50 | INFO    |     \u2713 Leonardo Hotel Esslingen | \xa5666 | \u2b508.8 | \U0001f4cd位置 9.3
+20:05:51 | INFO    |     \u2713 Hotel Le Village | \xa51,048 | \u2b507.7
+20:05:51 | INFO    |     \u2713 Hotel an der Stadtmauer | \xa51,084 | \u2b508.1
+20:05:52 | INFO    |     \u2713 Best Western Plus Hotel Am Schlossberg | \xa5616 | \u2b508.3
+20:05:53 | INFO    |     \u2713 PLAZA INN Leonberg | \xa5878 | \u2b508.2
+20:05:54 | INFO    |     \u2713 Berne's Altstadthotel | \xa5849 | \u2b508.6 | \U0001f4cd位置 9.6
+20:05:55 | INFO    |     \u2713 Best Western Plus Hotel Fellbach-Stuttgart | \xa5691 | \u2b508.6
+20:05:56 | INFO    |     \u2713 Ferienwohnung am Rande des Schwarzwalds | \xa5582 | \u2b509.2
+20:05:57 | INFO    |     \u2713 Residenz Lisa- Wohnen auf Zeit | \xa5734 | \u2b509.1
+20:05:58 | INFO    |     \u2713 Hotel Gruber | \xa5741 | \u2b508.4
+20:05:59 | INFO    |     \u2713 Hotel Am Markt | \xa5946 | \u2b508.7 | \U0001f4cd位置 9.5
+20:06:00 | INFO    |     \u2713 G\xe4stehaus Klingler | \xa5699 | \u2b509.0 | \U0001f4cd位置 9.6
+20:06:01 | INFO    |     \u2713 Premier Inn Stuttgart Airport Messe | \xa5458 | \u2b508.4
+20:06:02 | INFO    |     \u2713 Teck Retreat - Bequeme Wohnung mit Balkon | \xa5728 | \u2b509.6 | \U0001f4cd位置 9.3
+20:06:03 | INFO    |     \u2713 NEON Apartements | \xa5619 | \u2b508.9 | \U0001f4cd位置 9.4
+20:06:03 | INFO    |     \u2713 beppo Restaurant Boutique-Hotel | \xa5953 | \u2b508.6
+20:06:05 | INFO    |     \u2713 ibis budget Ludwigsburg | \xa5575 | \u2b508.3
+20:06:05 | INFO    |     \u2713 BUSINESS-MOTEL & XL-Parking, 24h-Checkin | \xa5557 | \u2b507.5
+20:06:06 | INFO    |     \u2713 elaya hotel stuttgart ludwigsburg, Trademark  | \xa5315 | \u2b507.9
+20:06:07 | INFO    |     \u2713 Hotel Reich Winterbach | \xa51,026 | \u2b508.1
+20:06:08 | INFO    |     \u2713 B&B Hotel B\xf6blingen | \xa5603 | \u2b508.2
+20:06:09 | INFO    |     \u2713 Ferienwohnung Geiger | \xa5688 | \u2b508.5
+20:06:10 | INFO    |     \u2713 Hotel Restaurant Lamm | \xa51,164 | \u2b509.0
+20:06:10 | INFO    |     \u2717 价格过滤: Premier Inn Stuttgart City Centre | \xa55,359/晚 × 2 晚 = \xa510,718 > 总预算 \xa53,000
+20:06:10 | INFO    |   \U0001f50d 价格过滤：剔除 1 条，保留 25 条 （总预算 \xa53,000 / 2 晚 = 每晚上限 \xa51,500）
+20:06:10 | INFO    | \u2713 已写入数据库 25 条记录
+20:06:10 | INFO    |   本页 25 条 | 本城累计 25 条
+20:06:10 | INFO    |   → 没有更多页面可翻
+20:06:11 | INFO    | 
+\u23f3 城市间延迟 26 秒（防反爬策略）…
+20:06:36 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:06:36 | INFO    | 
+============================================================
+20:06:36 | INFO    |   \U0001f30d 城市 2/9: Paris Chatelet
+20:06:36 | INFO    |      2027-07-25 → 2027-07-28 | 2 成人 | 最高 \xa54500/晚
+20:06:36 | INFO    | ============================================================
+20:06:36 | INFO    | \u25b8 搜索: Paris Chatelet | 2027-07-25 → 2027-07-28 | 2 成人 | 最高 \xa54500/晚
+20:06:36 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Paris+Chatelet&checkin=2027-07-25&checkout=2027-07-28&group_adults=2&no_rooms=1&selected_currency=CNY&la…
+20:06:49 | INFO    |   \u2713 页面网络空闲
+20:06:49 | INFO    |   \u2713 检测到房源卡片容器
+20:06:49 | INFO    | 
+  ── 第 1/3 页 ──
+20:07:19 | INFO    |   \U0001f4c5 预订日期: 2027-07-25 → 2027-07-28
+20:07:19 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 27 个房源卡片
+20:07:19 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:07:20 | INFO    |     \u2713 Little Paris Home | \xa53,285 | \u2b5010 | \U0001f4cd位置 10 | \U0001f4cf 0.1 miles from Ch\xe2telet-Les Ha
+20:07:20 | INFO    |     \u2713 H\xf4tel Plaza \xc9toile | \xa51,635 | \u2b508.4 | \U0001f4cd位置 9.6 | \U0001f4cf 2.4 miles from Ch\xe2telet-Les Ha
+20:07:20 | INFO    |     \u2713 Studio opéra paris | \xa51,044 | \u2b508.6 | \U0001f4cd位置 10 | \U0001f4cf 0.5 miles from Ch\xe2telet-Les Ha
+20:07:20 | INFO    |     \u2713 Maison Colbert member of Meliá Collection Not | \xa53,114 | \u2b508.7 | \U0001f4cd位置 9.5 | \U0001f4cf 0.7 miles from Ch\xe2telet-Les Ha
+20:07:20 | INFO    |     \u2713 Novotel Paris Les Halles | \xa52,718 | \u2b508.1 | \U0001f4cd位置 9.3 | \U0001f4cf 0.1 miles from Ch\xe2telet-Les Ha
+20:07:21 | INFO    |     \u2713 Appartement d'Exception au c\u0153ur du Marais Tou | \xa51,502 | \u2b507.4 | \U0001f4cf 0.4 miles from Ch\xe2telet-Les Ha
+20:07:21 | INFO    |     \u2713 Hotel Du Flaneur | \xa55,927 | \u2b508.6 | \U0001f4cf 0.6 miles from Ch\xe2telet-Les Ha
+20:07:21 | INFO    |     \u2713 Hotel Opera Maintenon | \xa51,643 | \u2b508.3 | \U0001f4cd位置 9.5 | \U0001f4cf 0.6 miles from Ch\xe2telet-Les Ha
+20:07:21 | INFO    |     \u2713 H\xf4tel Elixir | \xa56,881 | \u2b507.9 | \U0001f4cd位置 9.4 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:21 | INFO    |     \u2713 Citadines Saint-Germain-des-Prés Paris | \xa51,883 | \u2b508.0 | \U0001f4cd位置 9.6 | \U0001f4cf 0.5 miles from Ch\xe2telet-Les Ha
+20:07:22 | INFO    |     \u2713 Haut MaraisJolie duplex 33m2… | \xa51,154 | \u2b508.9 | \U0001f4cd位置 9.7 | \U0001f4cf 0.4 miles from Ch\xe2telet-Les Ha
+20:07:22 | INFO    |     \u2713 Hotel Louvre Bons Enfants | \xa51,637 | \u2b508.0 | \U0001f4cd位置 9.7 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:22 | INFO    |     \u2713 Appartement au coeur du Paris. | \xa5927 | \u2b508.4 | \U0001f4cd位置 9.7 | \U0001f4cf 0.1 miles from Ch\xe2telet-Les Ha
+20:07:22 | INFO    |     \u2713 Handsome Hotel | \xa51,709 | \u2b508.2 | \U0001f4cd位置 9.4 | \U0001f4cf 0.1 miles from Ch\xe2telet-Les Ha
+20:07:22 | INFO    |     \u2713 H\xf4tel Korner Ch\xe2telet | \xa51,398 | \u2b507.6 | \U0001f4cd位置 9.5 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:22 | INFO    |     \u2713 Hotel Britannique | \xa52,336 | \u2b508.7 | \U0001f4cd位置 9.7 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:23 | INFO    |     \u2713 H\xf4tel le 6 Tiquetonne | \xa52,840 | \u2b509.3 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from Ch\xe2telet-Les Ha
+20:07:23 | INFO    |     \u2713 Korner Opera | \xa51,299 | \u2b508.0 | \U0001f4cd位置 9.3 | \U0001f4cf 0.5 miles from Ch\xe2telet-Les Ha
+20:07:23 | INFO    |     \u2713 H\xf4tel Molière | \xa52,300 | \u2b509.1 | \U0001f4cd位置 9.7 | \U0001f4cf 0.5 miles from Ch\xe2telet-Les Ha
+20:07:23 | INFO    |     \u2713 L'Empire Paris - Louvre | \xa51,573 | \u2b508.8 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from Ch\xe2telet-Les Ha
+20:07:23 | INFO    |     \u2713 H\xf4tel le Clos de Notre Dame | \xa55,798 | \u2b508.1 | \U0001f4cd位置 9.6 | \U0001f4cf 0.6 miles from Ch\xe2telet-Les Ha
+20:07:23 | INFO    |     \u2713 Appartement Petits Champs II | \xa51,522 | \u2b508.7 | \U0001f4cd位置 9.7 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:24 | INFO    |     \u2713 Veda - Loft In The Heart Of Paris - Louvre | \xa51,871 | \u2b509.0 | \U0001f4cd位置 9.7 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:24 | INFO    |     \u2713 Appartement Aboukir | \xa51,868 | \u2b508.9 | \U0001f4cf 0.5 miles from Ch\xe2telet-Les Ha
+20:07:24 | INFO    |     \u2713 Appartement Petits Champs | \xa53,425 | \u2b508.9 | \U0001f4cd位置 9.8 | \U0001f4cf 0.3 miles from Ch\xe2telet-Les Ha
+20:07:24 | INFO    |     \u2713 Timhotel Palais Royal | \xa51,701 | \u2b508.2 | \U0001f4cd位置 9.5 | \U0001f4cf 0.4 miles from Ch\xe2telet-Les Ha
+20:07:25 | INFO    |     \u2713 Central Paris Apartment - Le Marais 1 Bedroom | \xa51,204 | \u2b50N/A | \U0001f4cf 0.4 miles from Ch\xe2telet-Les Ha
+20:07:25 | INFO    |     \u2717 价格过滤: Little Paris Home | \xa53,285/晚 × 3 晚 = \xa59,855 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: H\xf4tel Plaza \xc9toile | \xa51,635/晚 × 3 晚 = \xa54,905 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Maison Colbert member of Meliá Collectio | \xa53,114/晚 × 3 晚 = \xa59,342 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Novotel Paris Les Halles | \xa52,718/晚 × 3 晚 = \xa58,154 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Appartement d'Exception au c\u0153ur du Marai | \xa51,502/晚 × 3 晚 = \xa54,506 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Hotel Du Flaneur | \xa55,927/晚 × 3 晚 = \xa517,781 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Hotel Opera Maintenon | \xa51,643/晚 × 3 晚 = \xa54,929 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: H\xf4tel Elixir | \xa56,881/晚 × 3 晚 = \xa520,643 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Citadines Saint-Germain-des-Prés Paris | \xa51,883/晚 × 3 晚 = \xa55,649 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Hotel Louvre Bons Enfants | \xa51,637/晚 × 3 晚 = \xa54,911 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Handsome Hotel | \xa51,709/晚 × 3 晚 = \xa55,127 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Hotel Britannique | \xa52,336/晚 × 3 晚 = \xa57,008 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: H\xf4tel le 6 Tiquetonne | \xa52,840/晚 × 3 晚 = \xa58,520 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: H\xf4tel Molière | \xa52,300/晚 × 3 晚 = \xa56,900 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: L'Empire Paris - Louvre | \xa51,573/晚 × 3 晚 = \xa54,719 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: H\xf4tel le Clos de Notre Dame | \xa55,798/晚 × 3 晚 = \xa517,394 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Appartement Petits Champs II | \xa51,522/晚 × 3 晚 = \xa54,566 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Veda - Loft In The Heart Of Paris - Louv | \xa51,871/晚 × 3 晚 = \xa55,613 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Appartement Aboukir | \xa51,868/晚 × 3 晚 = \xa55,604 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Appartement Petits Champs | \xa53,425/晚 × 3 晚 = \xa510,275 > 总预算 \xa54,500
+20:07:25 | INFO    |     \u2717 价格过滤: Timhotel Palais Royal | \xa51,701/晚 × 3 晚 = \xa55,103 > 总预算 \xa54,500
+20:07:25 | INFO    |   \U0001f50d 价格过滤：剔除 21 条，保留 6 条 （总预算 \xa54,500 / 3 晚 = 每晚上限 \xa51,500）
+20:07:25 | INFO    | \u2713 已写入数据库 6 条记录
+20:07:25 | INFO    |   本页 6 条 | 本城累计 6 条
+20:07:25 | INFO    |   → 没有更多页面可翻
+20:07:25 | INFO    | 
+\u23f3 城市间延迟 15 秒（防反爬策略）…
+20:07:40 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:07:40 | INFO    | 
+============================================================
+20:07:40 | INFO    |   \U0001f30d 城市 3/9: Nice City Centre
+20:07:40 | INFO    |      2027-07-28 → 2027-07-31 | 2 成人 | 最高 \xa54500/晚
+20:07:40 | INFO    | ============================================================
+20:07:40 | INFO    | \u25b8 搜索: Nice City Centre | 2027-07-28 → 2027-07-31 | 2 成人 | 最高 \xa54500/晚
+20:07:40 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Nice+City+Centre&checkin=2027-07-28&checkout=2027-07-31&group_adults=2&no_rooms=1&selected_currency=CNY&…
+20:07:52 | INFO    |   \u2713 页面网络空闲
+20:07:52 | INFO    |   \u2713 检测到房源卡片容器
+20:07:52 | INFO    | 
+  ── 第 1/3 页 ──
+20:08:23 | INFO    |   \U0001f4c5 预订日期: 2027-07-28 → 2027-07-31
+20:08:23 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 25 个房源卡片
+20:08:23 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:08:23 | INFO    |     \u2713 Ikonik Jean Médecin | \xa51,204 | \u2b507.8
+20:08:24 | INFO    |     \u2713 Crisol Mozart | \xa51,629 | \u2b508.2
+20:08:24 | INFO    |     \u2713 ibis Nice Centre Gare | \xa51,112 | \u2b507.7
+20:08:25 | INFO    |     \u2713 Appart Cosy, Proche Gare | \xa5978 | \u2b509.3 | \U0001f4cd位置 9.8
+20:08:26 | INFO    |     \u2713 Nice Renting - 7FRANCE - Suite Luxe & Confort | \xa51,779 | \u2b507.6
+20:08:26 | INFO    |     \u2713 Le grand Escurial | \xa51,134 | \u2b508.5
+20:08:27 | INFO    |     \u2713 \xc9légant 2 pièces Ni\xe7ois - Carré d'Or - Centre | \xa51,747 | \u2b509.6 | \U0001f4cd位置 9.8
+20:08:28 | INFO    |     \u2713 L'\xc9crin de la Piétonne | \xa56,700 | \u2b509.0 | \U0001f4cd位置 10
+20:08:29 | INFO    |     \u2713 Hotel Gounod Fully Renovated | \xa52,152 | \u2b509.1 | \U0001f4cd位置 9.5
+20:08:29 | INFO    |     \u2713 Hostel Ozz Nice | \xa51,911 | \u2b508.1
+20:08:29 | INFO    |     \u2713 Palais Clemenceau | \xa5812 | \u2b509.0 | \U0001f4cd位置 9.5
+20:08:30 | INFO    |     \u2713 Maison Albar - Le Victoria | \xa54,978 | \u2b509.1 | \U0001f4cd位置 9.7
+20:08:30 | INFO    |     \u2713 Appartament charmant quartier les musiciens | \xa51,044 | \u2b508.3 | \U0001f4cd位置 10
+20:08:31 | INFO    |     \u2713 Auber City | \xa59,045 | \u2b506.7
+20:08:32 | INFO    |     \u2713 T2 situé au centre-ville de Nice | \xa51,065 | \u2b507.6 | \U0001f4cd位置 9.5
+20:08:33 | INFO    |     \u2713 CARABACEL - One room Suite AC and Balcony | \xa51,591 | \u2b50N/A
+20:08:33 | INFO    |     \u2713 Carré d'or Place Masséna - Studio magnifique | \xa51,524 | \u2b508.8 | \U0001f4cd位置 10
+20:08:34 | INFO    |     \u2713 Studio Beautes FSHH | \xa51,614 | \u2b507.8
+20:08:34 | INFO    |     \u2713 Suites et Appartements Quartier Musiciens | \xa51,525 | \u2b508.6
+20:08:35 | INFO    |     \u2713 10 AMIRAL 201 - Magnifique apt - 2 chambres - | \xa52,041 | \u2b508.5 | \U0001f4cd位置 9.3
+20:08:35 | INFO    |     \u2713 2-bedroom apartment - sleeps 4 - Place Massen | \xa51,586 | \u2b5010 | \U0001f4cd位置 10
+20:08:36 | INFO    |     \u2713 Joli cocon à 3 min à pied de la mer | \xa51,457 | \u2b508.0
+20:08:37 | INFO    |     \u2713 Studio Rénové - Hypercentre Nice, Gare & Tram | \xa5922 | \u2b507.8
+20:08:37 | INFO    |     \u2713 Le Notre Dame - Climatisation - Coeur de Nice | \xa5922 | \u2b509.8 | \U0001f4cd位置 10
+20:08:38 | INFO    |     \u2713 Elegant et lumineux 3 pieces Avenue Jean Mede | \xa53,005 | \u2b508.9 | \U0001f4cd位置 9.5
+20:08:38 | INFO    |     \u2717 价格过滤: Crisol Mozart | \xa51,629/晚 × 3 晚 = \xa54,887 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Nice Renting - 7FRANCE - Suite Luxe & Co | \xa51,779/晚 × 3 晚 = \xa55,337 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: \xc9légant 2 pièces Ni\xe7ois - Carré d'Or - C | \xa51,747/晚 × 3 晚 = \xa55,241 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: L'\xc9crin de la Piétonne | \xa56,700/晚 × 3 晚 = \xa520,100 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Hotel Gounod Fully Renovated | \xa52,152/晚 × 3 晚 = \xa56,456 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Hostel Ozz Nice | \xa51,911/晚 × 3 晚 = \xa55,733 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Maison Albar - Le Victoria | \xa54,978/晚 × 3 晚 = \xa514,934 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Auber City | \xa59,045/晚 × 3 晚 = \xa527,135 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: CARABACEL - One room Suite AC and Balcon | \xa51,591/晚 × 3 晚 = \xa54,773 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Carré d'or Place Masséna - Studio magnif | \xa51,524/晚 × 3 晚 = \xa54,572 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Studio Beautes FSHH | \xa51,614/晚 × 3 晚 = \xa54,842 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Suites et Appartements Quartier Musicien | \xa51,525/晚 × 3 晚 = \xa54,575 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: 10 AMIRAL 201 - Magnifique apt - 2 chamb | \xa52,041/晚 × 3 晚 = \xa56,123 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: 2-bedroom apartment - sleeps 4 - Place M | \xa51,586/晚 × 3 晚 = \xa54,758 > 总预算 \xa54,500
+20:08:38 | INFO    |     \u2717 价格过滤: Elegant et lumineux 3 pieces Avenue Jean | \xa53,005/晚 × 3 晚 = \xa59,015 > 总预算 \xa54,500
+20:08:38 | INFO    |   \U0001f50d 价格过滤：剔除 15 条，保留 10 条 （总预算 \xa54,500 / 3 晚 = 每晚上限 \xa51,500）
+20:08:38 | INFO    | \u2713 已写入数据库 10 条记录
+20:08:38 | INFO    |   本页 10 条 | 本城累计 10 条
+20:08:38 | INFO    |   → 没有更多页面可翻
+20:08:38 | INFO    | 
+\u23f3 城市间延迟 19 秒（防反爬策略）…
+20:08:57 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:08:57 | INFO    | 
+============================================================
+20:08:57 | INFO    |   \U0001f30d 城市 4/9: Milan Central Station
+20:08:57 | INFO    |      2027-07-31 → 2027-08-01 | 2 成人 | 最高 \xa51500/晚
+20:08:57 | INFO    | ============================================================
+20:08:58 | INFO    | \u25b8 搜索: Milan Central Station | 2027-07-31 → 2027-08-01 | 2 成人 | 最高 \xa51500/晚
+20:08:58 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Milan+Central+Station&checkin=2027-07-31&checkout=2027-08-01&group_adults=2&no_rooms=1&selected_currency…
+20:09:10 | INFO    |   \u2713 页面网络空闲
+20:09:10 | INFO    |   \u2713 检测到房源卡片容器
+20:09:10 | INFO    | 
+  ── 第 1/3 页 ──
+20:10:07 | INFO    |   \U0001f4c5 预订日期: 2027-07-31 → 2027-08-01
+20:10:07 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 26 个房源卡片
+20:10:07 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:10:10 | INFO    |     \u2713 Milano Central Station | \xa570 | \u2b509.6 | \U0001f4cd位置 9.4
+20:10:12 | INFO    |     \u2713 AN Hotel Milano Melegnano | \xa5814 | \u2b508.4
+20:10:14 | INFO    |     \u2713 NH Milano Congress Centre | \xa51,359 | \u2b508.7
+20:10:17 | INFO    |     \u2713 San Siro Luminous Urban Home 3 AC&WiFi | \xa52,010 | \u2b50N/A
+20:10:19 | INFO    |     \u2713 H2C Hotel Milanofiori | \xa51,065 | \u2b508.6
+20:10:21 | INFO    |     \u2713 Belstay Milano Assago | \xa54,725 | \u2b508.3
+20:10:23 | INFO    |     \u2713 Mercure Milano Agrate Brianza | \xa5716 | \u2b508.5
+20:10:25 | INFO    |     \u2713 Starhotels Grand Milan | \xa5665 | \u2b508.6
+20:10:26 | INFO    |     \u2713 Hotel Motel Europa | \xa5637 | \u2b508.6
+20:10:28 | INFO    |     \u2713 B&B HOTELS Hotel Prestige Ornago | \xa5614 | \u2b507.6
+20:10:29 | INFO    |     \u2713 Golf Hotel Milano | \xa5781 | \u2b508.4
+20:10:30 | INFO    |     \u2713 UNA Hotels Galles Milano | \xa5858 | \u2b508.3
+20:10:32 | INFO    |     \u2713 Tesorella guest house | \xa5526 | \u2b509.3
+20:10:33 | INFO    |     \u2713 Just Hotel Saronno | \xa5691 | \u2b508.6
+20:10:34 | INFO    |     \u2713 Ca del Trima | \xa5659 | \u2b508.7
+20:10:35 | INFO    |     \u2713 Casa GiuBarElla | \xa5885 | \u2b509.4
+20:10:36 | INFO    |     \u2713 Ibis Milano Fiera | \xa5686 | \u2b508.2
+20:10:37 | INFO    |     \u2713 Albergo Dei Laghi | \xa5913 | \u2b508.6
+20:10:39 | INFO    |     \u2713 NH Milano 2 | \xa51,322 | \u2b507.6
+20:10:40 | INFO    |     \u2713 Hotel Tiffany Milano | \xa51,211 | \u2b507.7
+20:10:41 | INFO    |     \u2713 Belstay Milano Linate | \xa5612 | \u2b508.1
+20:10:43 | INFO    |     \u2713 Mahthildis Agriturismo B&B | \xa5849 | \u2b509.3
+20:10:44 | INFO    |     \u2713 RRRapido Hotel | \xa5452 | \u2b508.4
+20:10:46 | INFO    |     \u2713 Hotel Forum | \xa5717 | \u2b508.0
+20:10:47 | INFO    |     \u2713 Assago Forum Apartment - MilanoFiori | \xa5540 | \u2b508.8
+20:10:48 | INFO    |     \u2713 Polo Hotel | \xa5459 | \u2b508.2
+20:10:48 | INFO    |     \u2717 价格过滤: San Siro Luminous Urban Home 3 AC&WiFi | \xa52,010/晚 × 1 晚 = \xa52,010 > 总预算 \xa51,500
+20:10:48 | INFO    |     \u2717 价格过滤: Belstay Milano Assago | \xa54,725/晚 × 1 晚 = \xa54,725 > 总预算 \xa51,500
+20:10:48 | INFO    |   \U0001f50d 价格过滤：剔除 2 条，保留 24 条 （总预算 \xa51,500 / 1 晚 = 每晚上限 \xa51,500）
+20:10:48 | INFO    | \u2713 已写入数据库 24 条记录
+20:10:48 | INFO    |   本页 24 条 | 本城累计 24 条
+20:10:48 | INFO    |   → 没有更多页面可翻
+20:10:48 | INFO    | 
+\u23f3 城市间延迟 28 秒（防反爬策略）…
+20:11:17 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:11:17 | INFO    | 
+============================================================
+20:11:17 | INFO    |   \U0001f30d 城市 5/9: Venice
+20:11:17 | INFO    |      2027-08-01 → 2027-08-04 | 2 成人 | 最高 \xa54500/晚
+20:11:17 | INFO    | ============================================================
+20:11:17 | INFO    | \u25b8 搜索: Venice | 2027-08-01 → 2027-08-04 | 2 成人 | 最高 \xa54500/晚
+20:11:17 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Venice&checkin=2027-08-01&checkout=2027-08-04&group_adults=2&no_rooms=1&selected_currency=CNY&lang=en-us…
+20:11:30 | INFO    |   \u2713 页面网络空闲
+20:11:30 | INFO    |   \u2713 检测到房源卡片容器
+20:11:30 | INFO    | 
+  ── 第 1/3 页 ──
+20:12:00 | INFO    |   \U0001f4c5 预订日期: 2027-08-01 → 2027-08-04
+20:12:00 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 25 个房源卡片
+20:12:00 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:12:00 | INFO    |     \u2713 B&B HOTEL Venezia Laguna | \xa52,054 | \u2b508.9 | \U0001f4cf 1.7 miles from downtown
+20:12:00 | INFO    |     \u2713 Ca' Maddalena | \xa5991 | \u2b509.1 | \U0001f4cd位置 9.7 | \U0001f4cf 0.5 miles from downtown
+20:12:00 | INFO    |     \u2713 Ostello Domus Civica | \xa5712 | \u2b508.7 | \U0001f4cd位置 9.5 | \U0001f4cf 0.8 miles from downtown
+20:12:00 | INFO    |     \u2713 Maison Celestia | \xa51,416 | \u2b509.5 | \U0001f4cd位置 9.6 | \U0001f4cf 0.6 miles from downtown
+20:12:01 | INFO    |     \u2713 Renovated and Spacious flat near San Marco | \xa51,586 | \u2b50N/A | \U0001f4cf 0.3 miles from downtown
+20:12:01 | INFO    |     \u2713 Generator Venice | \xa5834 | \u2b508.0 | \U0001f4cf 0.6 miles from downtown
+20:12:01 | INFO    |     \u2713 Venice 410 San Polo Roky wifi center city | \xa51,251 | \u2b507.6 | \U0001f4cd位置 9.4 | \U0001f4cf 0.5 miles from downtown
+20:12:01 | INFO    |     \u2713 Hotel Casa W | \xa51,440 | \u2b509.4 | \U0001f4cd位置 9.6 | \U0001f4cf 0.6 miles from downtown
+20:12:01 | INFO    |     \u2713 San Marco Central Flat | \xa51,098 | \u2b508.5 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from downtown
+20:12:02 | INFO    |     \u2713 Ca Lipoli | \xa52,216 | \u2b508.7 | \U0001f4cf 0.6 miles from downtown
+20:12:02 | INFO    |     \u2713 Luxury Residence in Venice | \xa51,758 | \u2b509.4 | \U0001f4cd位置 9.5 | \U0001f4cf 1 miles from downtown
+20:12:02 | INFO    |     \u2713 MORI 1 CON BELLA VISTA NUOVO APPARTAMENTO | \xa52,106 | \u2b509.7 | \U0001f4cd位置 9.7 | \U0001f4cf 0.8 miles from downtown
+20:12:02 | INFO    |     \u2713 CASA MODERNA A DUE PASSI DA RIALTO | \xa51,203 | \u2b509.2 | \U0001f4cd位置 9.6 | \U0001f4cf 0.5 miles from downtown
+20:12:02 | INFO    |     \u2713 Casa Furlani ai Dalmati - Your home on the Ca | \xa51,351 | \u2b509.6 | \U0001f4cd位置 9.5 | \U0001f4cf 0.4 miles from downtown
+20:12:02 | INFO    |     \u2713 Ca de la Cenise Apartment | \xa51,197 | \u2b509.3 | \U0001f4cd位置 9.4 | \U0001f4cf 0.4 miles from downtown
+20:12:03 | INFO    |     \u2713 Cozy Studio with Canal View | \xa51,203 | \u2b509.1 | \U0001f4cd位置 9.8 | \U0001f4cf 0.5 miles from downtown
+20:12:03 | INFO    |     \u2713 b&b allo squero | \xa5996 | \u2b509.0 | \U0001f4cd位置 9.7 | \U0001f4cf 0.6 miles from downtown
+20:12:03 | INFO    |     \u2713 Suite Ai Leoni | \xa51,133 | \u2b509.3 | \U0001f4cd位置 9.7 | \U0001f4cf 0.6 miles from downtown
+20:12:03 | INFO    |     \u2713 Casa di Sam, Venice | \xa51,062 | \u2b508.8 | \U0001f4cd位置 9.6 | \U0001f4cf 0.5 miles from downtown
+20:12:03 | INFO    |     \u2713 Casa Biennale | \xa51,203 | \u2b507.5 | \U0001f4cf 0.5 miles from downtown
+20:12:03 | INFO    |     \u2713 San Gervasio Apartment | \xa51,402 | \u2b509.5 | \U0001f4cd位置 9.9 | \U0001f4cf 0.6 miles from downtown
+20:12:03 | INFO    |     \u2713 Ca'Tintoretta | \xa51,324 | \u2b508.7 | \U0001f4cd位置 10 | \U0001f4cf 0.8 miles from downtown
+20:12:04 | INFO    |     \u2713 Bacanal Apartment | \xa51,147 | \u2b509.5 | \U0001f4cd位置 9.8 | \U0001f4cf 0.7 miles from downtown
+20:12:04 | INFO    |     \u2713 TINTORETTO 4, 3 GRANDI CAMERE DA LETTO, 2 BAG | \xa51,986 | \u2b509.5 | \U0001f4cd位置 9.4 | \U0001f4cf 0.8 miles from downtown
+20:12:04 | INFO    |     \u2713 Ca' Ponte degli Scalzi train station WI-FI | \xa51,593 | \u2b509.2 | \U0001f4cd位置 9.8 | \U0001f4cf 0.9 miles from downtown
+20:12:04 | INFO    |     \u2717 价格过滤: B&B HOTEL Venezia Laguna | \xa52,054/晚 × 3 晚 = \xa56,162 > 总预算 \xa54,500
+20:12:04 | INFO    |     \u2717 价格过滤: Renovated and Spacious flat near San Mar | \xa51,586/晚 × 3 晚 = \xa54,758 > 总预算 \xa54,500
+20:12:04 | INFO    |     \u2717 价格过滤: Ca Lipoli | \xa52,216/晚 × 3 晚 = \xa56,648 > 总预算 \xa54,500
+20:12:04 | INFO    |     \u2717 价格过滤: Luxury Residence in Venice | \xa51,758/晚 × 3 晚 = \xa55,274 > 总预算 \xa54,500
+20:12:04 | INFO    |     \u2717 价格过滤: MORI 1 CON BELLA VISTA NUOVO APPARTAMENT | \xa52,106/晚 × 3 晚 = \xa56,318 > 总预算 \xa54,500
+20:12:04 | INFO    |     \u2717 价格过滤: TINTORETTO 4, 3 GRANDI CAMERE DA LETTO,  | \xa51,986/晚 × 3 晚 = \xa55,958 > 总预算 \xa54,500
+20:12:04 | INFO    |     \u2717 价格过滤: Ca' Ponte degli Scalzi train station WI- | \xa51,593/晚 × 3 晚 = \xa54,779 > 总预算 \xa54,500
+20:12:04 | INFO    |   \U0001f50d 价格过滤：剔除 7 条，保留 18 条 （总预算 \xa54,500 / 3 晚 = 每晚上限 \xa51,500）
+20:12:04 | INFO    | \u2713 已写入数据库 18 条记录
+20:12:04 | INFO    |   本页 18 条 | 本城累计 18 条
+20:12:04 | INFO    |   → 没有更多页面可翻
+20:12:04 | INFO    | 
+\u23f3 城市间延迟 17 秒（防反爬策略）…
+20:12:21 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:12:21 | INFO    | 
+============================================================
+20:12:21 | INFO    |   \U0001f30d 城市 6/9: Florence Santa Maria Novella
+20:12:21 | INFO    |      2027-08-04 → 2027-08-06 | 2 成人 | 最高 \xa53000/晚
+20:12:21 | INFO    | ============================================================
+20:12:21 | INFO    | \u25b8 搜索: Florence Santa Maria Novella | 2027-08-04 → 2027-08-06 | 2 成人 | 最高 \xa53000/晚
+20:12:21 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Florence+Santa+Maria+Novella&checkin=2027-08-04&checkout=2027-08-06&group_adults=2&no_rooms=1&selected_c…
+20:12:35 | INFO    |   \u2713 页面网络空闲
+20:12:35 | INFO    |   \u2713 检测到房源卡片容器
+20:12:35 | INFO    | 
+  ── 第 1/3 页 ──
+20:13:05 | INFO    |   \U0001f4c5 预订日期: 2027-08-04 → 2027-08-06
+20:13:05 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 25 个房源卡片
+20:13:05 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:13:05 | INFO    |     \u2713 Residenza Fiorentina | \xa5586 | \u2b508.5 | \U0001f4cd位置 9.5 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:05 | INFO    |     \u2713 Firenze Rooms Cathedral B&B | \xa5819 | \u2b507.7 | \U0001f4cd位置 9.7 | \U0001f4cf 0.4 miles from Santa Maria Nov
+20:13:05 | INFO    |     \u2713 Hotel Brooklyn | \xa5953 | \u2b507.8 | \U0001f4cf 0.1 miles from Santa Maria Nov
+20:13:05 | INFO    |     \u2713 Bohemian Palace Florence | \xa5762 | \u2b508.2 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:05 | INFO    |     \u2713 B&B Hotel Firenze Laurus Al Duomo | \xa51,338 | \u2b509.1 | \U0001f4cd位置 9.8 | \U0001f4cf 0.3 miles from Santa Maria Nov
+20:13:06 | INFO    |     \u2713 View of the Medici Chapels- center | \xa5798 | \u2b508.7 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:06 | INFO    |     \u2713 Dimora Montebello | \xa51,416 | \u2b509.6 | \U0001f4cd位置 10 | \U0001f4cf 0.3 miles from Santa Maria Nov
+20:13:06 | INFO    |     \u2713 Grand Hotel Baglioni | \xa5990 | \u2b508.8 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:06 | INFO    |     \u2713 B&B Residenza le Fonticine | \xa5847 | \u2b508.9 | \U0001f4cd位置 9.6 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:06 | INFO    |     \u2713 Piazza Signoria 1, apartment | \xa51,107 | \u2b509.5 | \U0001f4cd位置 9.9 | \U0001f4cf 0.6 miles from Santa Maria Nov
+20:13:06 | INFO    |     \u2713 Jungle flat | \xa5791 | \u2b508.3 | \U0001f4cd位置 9.6 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 The Moon Boutique Hotel & Spa | \xa51,081 | \u2b509.4 | \U0001f4cf 0.5 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 Hotel Le Due Fontane | \xa5994 | \u2b508.3 | \U0001f4cd位置 9.6 | \U0001f4cf 0.6 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 25hours Hotel Florence Piazza San Paolino | \xa51,098 | \u2b508.9 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 Luxury Apartment Near the Duomo accommodate u | \xa51,502 | \u2b509.3 | \U0001f4cd位置 10 | \U0001f4cf 0.5 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 San marco elegant apartment | \xa51,311 | \u2b508.6 | \U0001f4cd位置 9.6 | \U0001f4cf 0.4 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 Mercure Firenze Centro | \xa51,354 | \u2b508.6 | \U0001f4cd位置 9.3 | \U0001f4cf 0.1 miles from Santa Maria Nov
+20:13:07 | INFO    |     \u2713 Ponte Vecchio Suites & Spa | \xa51,771 | \u2b509.4 | \U0001f4cd位置 9.9 | \U0001f4cf 0.6 miles from Santa Maria Nov
+20:13:08 | INFO    |     \u2713 Servi Central Appartment | \xa51,046 | \u2b506.6 | \U0001f4cf 0.5 miles from Santa Maria Nov
+20:13:08 | INFO    |     \u2713 Santa Reparata Loft - Florence | \xa51,119 | \u2b508.6 | \U0001f4cd位置 9.8 | \U0001f4cf 0.4 miles from Santa Maria Nov
+20:13:08 | INFO    |     \u2713 Hotel De Lanzi | \xa5782 | \u2b508.2 | \U0001f4cd位置 9.8 | \U0001f4cf 0.5 miles from Santa Maria Nov
+20:13:08 | INFO    |     \u2713 NEW GENERATION HOSTEL Florence | \xa5815 | \u2b507.5 | \U0001f4cf 0.3 miles from Santa Maria Nov
+20:13:08 | INFO    |     \u2713 Nice Residence | \xa5991 | \u2b506.0 | \U0001f4cf 0.5 miles from Santa Maria Nov
+20:13:09 | INFO    |     \u2713 Hotel Settefiori | \xa5950 | \u2b509.5 | \U0001f4cd位置 9.9 | \U0001f4cf 0.2 miles from Santa Maria Nov
+20:13:09 | INFO    |     \u2713 RF Duomo suites | \xa51,061 | \u2b509.5 | \U0001f4cd位置 10 | \U0001f4cf 0.5 miles from Santa Maria Nov
+20:13:09 | INFO    |     \u2717 价格过滤: Luxury Apartment Near the Duomo accommod | \xa51,502/晚 × 2 晚 = \xa53,004 > 总预算 \xa53,000
+20:13:09 | INFO    |     \u2717 价格过滤: Ponte Vecchio Suites & Spa | \xa51,771/晚 × 2 晚 = \xa53,542 > 总预算 \xa53,000
+20:13:09 | INFO    |   \U0001f50d 价格过滤：剔除 2 条，保留 23 条 （总预算 \xa53,000 / 2 晚 = 每晚上限 \xa51,500）
+20:13:09 | INFO    | \u2713 已写入数据库 23 条记录
+20:13:09 | INFO    |   本页 23 条 | 本城累计 23 条
+20:13:09 | INFO    |   → 没有更多页面可翻
+20:13:09 | INFO    | 
+\u23f3 城市间延迟 28 秒（防反爬策略）…
+20:13:37 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:13:37 | INFO    | 
+============================================================
+20:13:37 | INFO    |   \U0001f30d 城市 7/9: Pienza
+20:13:37 | INFO    |      2027-08-06 → 2027-08-09 | 2 成人 | 最高 \xa54500/晚
+20:13:37 | INFO    | ============================================================
+20:13:37 | INFO    | \u25b8 搜索: Pienza | 2027-08-06 → 2027-08-09 | 2 成人 | 最高 \xa54500/晚
+20:13:37 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Pienza&checkin=2027-08-06&checkout=2027-08-09&group_adults=2&no_rooms=1&selected_currency=CNY&lang=en-us…
+20:13:49 | INFO    |   \u2713 页面网络空闲
+20:13:49 | INFO    |   \u2713 检测到房源卡片容器
+20:13:49 | INFO    | 
+  ── 第 1/3 页 ──
+20:14:19 | INFO    |   \U0001f4c5 预订日期: 2027-08-06 → 2027-08-09
+20:14:19 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 25 个房源卡片
+20:14:19 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:14:19 | INFO    |     \u2713 Palazzo Massaini - La Pieve | \xa51,092 | \u2b509.4 | \U0001f4cd位置 9.7 | \U0001f4cf 2.4 miles from downtown
+20:14:19 | INFO    |     \u2713 Palazzo Massaini - Le Scuderie | \xa52,124 | \u2b509.4 | \U0001f4cd位置 9.8 | \U0001f4cf 2.1 miles from downtown
+20:14:19 | INFO    |     \u2713 RELAIS VAL D'ORCIA | \xa52,076 | \u2b509.7 | \U0001f4cd位置 9.6 | \U0001f4cf 9.4 miles from downtown
+20:14:20 | INFO    |     \u2713 Il Giardino Segreto | \xa5619 | \u2b509.4 | \U0001f4cd位置 9.9 | \U0001f4cf 200 feet from downtown
+20:14:20 | INFO    |     \u2713 Palazzo Massaini - Cavarciano | \xa51,321 | \u2b509.2 | \U0001f4cd位置 9.5 | \U0001f4cf 2.5 miles from downtown
+20:14:20 | INFO    |     \u2713 Millefiori | \xa5448 | \u2b508.3 | \U0001f4cd位置 9.7 | \U0001f4cf 300 feet from downtown
+20:14:20 | INFO    |     \u2713 Agriturismo Marinello | \xa51,176 | \u2b509.4 | \U0001f4cd位置 9.7 | \U0001f4cf 1.1 miles from downtown
+20:14:20 | INFO    |     \u2713 Agriturismo Il Casalino | \xa51,313 | \u2b509.6 | \U0001f4cd位置 9.8 | \U0001f4cf 0.7 miles from downtown
+20:14:20 | INFO    |     \u2713 Le Sorbelle D'Orcia | \xa533,059 | \u2b509.5 | \U0001f4cd位置 9.7 | \U0001f4cf 3 miles from downtown
+20:14:20 | INFO    |     \u2713 Agriturismo Bagnolo | \xa5708 | \u2b509.0 | \U0001f4cd位置 9.3 | \U0001f4cf 2.8 miles from downtown
+20:14:21 | INFO    |     \u2713 Hotel Corsignano | \xa51,177 | \u2b509.1 | \U0001f4cd位置 9.7 | \U0001f4cf 0.2 miles from downtown
+20:14:21 | INFO    |     \u2713 Agriturismo Il Macchione | \xa51,395 | \u2b509.3 | \U0001f4cd位置 9.5 | \U0001f4cf 1.4 miles from downtown
+20:14:21 | INFO    |     \u2713 Affittacamere Dal Falco | \xa5559 | \u2b508.3 | \U0001f4cd位置 9.7 | \U0001f4cf 0.1 miles from downtown
+20:14:21 | INFO    |     \u2713 Hotel San Gregorio | \xa51,736 | \u2b509.0 | \U0001f4cd位置 9.8 | \U0001f4cf 0.1 miles from downtown
+20:14:21 | INFO    |     \u2713 Casa in Campagna Casagori | \xa51,335 | \u2b509.4 | \U0001f4cd位置 9.8 | \U0001f4cf 1 miles from downtown
+20:14:21 | INFO    |     \u2713 Affittacamere del Corso | \xa5521 | \u2b509.1 | \U0001f4cd位置 9.8 | \U0001f4cf 300 feet from downtown
+20:14:21 | INFO    |     \u2713 Il Giglio B&B | \xa51,094 | \u2b508.6 | \U0001f4cd位置 9.7 | \U0001f4cf 300 feet from downtown
+20:14:21 | INFO    |     \u2713 Casa Asilo La Foce, Val d' Orcia, Pienza. | \xa51,253 | \u2b509.6 | \U0001f4cd位置 9.8 | \U0001f4cf 6.1 miles from downtown
+20:14:22 | INFO    |     \u2713 GARAGE47 Storica Officina Meccanica LOFT B&B  | \xa51,014 | \u2b509.8 | \U0001f4cd位置 9.9 | \U0001f4cf 0.1 miles from downtown
+20:14:22 | INFO    |     \u2713 Pienzalettings "Suites" | \xa5794 | \u2b509.5 | \U0001f4cd位置 9.9 | \U0001f4cf 0.1 miles from downtown
+20:14:22 | INFO    |     \u2713 Podere Spedalone | \xa51,245 | \u2b508.8 | \U0001f4cf 3.9 miles from downtown
+20:14:22 | INFO    |     \u2713 L'apparita Camere | \xa5609 | \u2b507.1 | \U0001f4cf 400 feet from downtown
+20:14:22 | INFO    |     \u2713 PienzaLettings "Casa Olivieri" | \xa5869 | \u2b509.3 | \U0001f4cd位置 9.9 | \U0001f4cf 250 feet from downtown
+20:14:22 | INFO    |     \u2713 Artistica Pienza - Breathtaking Val d'Orcia V | \xa51,926 | \u2b5010 | \U0001f4cd位置 10 | \U0001f4cf 450 feet from downtown
+20:14:23 | INFO    |     \u2713 Lignanello Country House | \xa51,158 | \u2b509.4 | \U0001f4cd位置 9.7 | \U0001f4cf 1.7 miles from downtown
+20:14:23 | INFO    |     \u2717 价格过滤: Palazzo Massaini - Le Scuderie | \xa52,124/晚 × 3 晚 = \xa56,372 > 总预算 \xa54,500
+20:14:23 | INFO    |     \u2717 价格过滤: RELAIS VAL D'ORCIA | \xa52,076/晚 × 3 晚 = \xa56,228 > 总预算 \xa54,500
+20:14:23 | INFO    |     \u2717 价格过滤: Le Sorbelle D'Orcia | \xa533,059/晚 × 3 晚 = \xa599,177 > 总预算 \xa54,500
+20:14:23 | INFO    |     \u2717 价格过滤: Hotel San Gregorio | \xa51,736/晚 × 3 晚 = \xa55,208 > 总预算 \xa54,500
+20:14:23 | INFO    |     \u2717 价格过滤: Artistica Pienza - Breathtaking Val d'Or | \xa51,926/晚 × 3 晚 = \xa55,778 > 总预算 \xa54,500
+20:14:23 | INFO    |   \U0001f50d 价格过滤：剔除 5 条，保留 20 条 （总预算 \xa54,500 / 3 晚 = 每晚上限 \xa51,500）
+20:14:23 | INFO    | \u2713 已写入数据库 20 条记录
+20:14:23 | INFO    |   本页 20 条 | 本城累计 20 条
+20:14:23 | INFO    |   → 没有更多页面可翻
+20:14:23 | INFO    | 
+\u23f3 城市间延迟 29 秒（防反爬策略）…
+20:14:52 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:14:52 | INFO    | 
+============================================================
+20:14:52 | INFO    |   \U0001f30d 城市 8/9: Barcelona City Centre
+20:14:52 | INFO    |      2027-08-09 → 2027-08-12 | 2 成人 | 最高 \xa54500/晚
+20:14:52 | INFO    | ============================================================
+20:14:52 | INFO    | \u25b8 搜索: Barcelona City Centre | 2027-08-09 → 2027-08-12 | 2 成人 | 最高 \xa54500/晚
+20:14:52 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Barcelona+City+Centre&checkin=2027-08-09&checkout=2027-08-12&group_adults=2&no_rooms=1&selected_currency…
+20:15:05 | INFO    |   \u2713 页面网络空闲
+20:15:05 | INFO    |   \u2713 检测到房源卡片容器
+20:15:05 | INFO    | 
+  ── 第 1/3 页 ──
+20:15:34 | INFO    |   \U0001f4c5 预订日期: 2027-08-09 → 2027-08-12
+20:15:34 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 25 个房源卡片
+20:15:34 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:15:35 | INFO    |     \u2713 Hotel Rialto | \xa5988 | \u2b508.6 | \U0001f4cd位置 9.6
+20:15:35 | INFO    |     \u2713 lullaby by hamilton | \xa5688 | \u2b508.1 | \U0001f4cd位置 9.6
+20:15:36 | INFO    |     \u2713 HCC Montblanc | \xa5886 | \u2b508.8 | \U0001f4cd位置 9.6
+20:15:37 | INFO    |     \u2713 HCC Taber | \xa5886 | \u2b508.7 | \U0001f4cd位置 9.6
+20:15:37 | INFO    |     \u2713 BCNGOTIC 42 | \xa51,268 | \u2b509.3 | \U0001f4cd位置 9.9
+20:15:38 | INFO    |     \u2713 HCC St. Moritz | \xa5962 | \u2b508.5 | \U0001f4cd位置 9.6
+20:15:39 | INFO    |     \u2713 Catalonia Eixample 1864 | \xa51,274 | \u2b508.6 | \U0001f4cd位置 9.5
+20:15:39 | INFO    |     \u2713 HCC Regente | \xa5924 | \u2b508.5 | \U0001f4cd位置 9.7
+20:15:40 | INFO    |     \u2713 Hotel Barcelona Catedral 4 Sup | \xa51,529 | \u2b509.3 | \U0001f4cd位置 9.8
+20:15:40 | INFO    |     \u2713 Hotel Gótico | \xa51,119 | \u2b509.0 | \U0001f4cd位置 9.7
+20:15:41 | INFO    |     \u2713 Barcelona Hotel Colonial | \xa51,119 | \u2b508.8 | \U0001f4cd位置 9.6
+20:15:42 | INFO    |     \u2713 Hotel Medinaceli 4 Sup | \xa51,448 | \u2b509.1 | \U0001f4cd位置 9.6
+20:15:42 | INFO    |     \u2713 H10 Casa Mimosa 4* Sup | \xa51,635 | \u2b509.4 | \U0001f4cd位置 9.7
+20:15:43 | INFO    |     \u2713 H10 Madison 4* Sup | \xa51,758 | \u2b509.2 | \U0001f4cd位置 9.8
+20:15:43 | INFO    |     \u2713 H10 Raco del Pi Boutique hotel | \xa51,126 | \u2b508.8 | \U0001f4cd位置 9.7
+20:15:44 | INFO    |     \u2713 H10 Port Vell 4* Sup | \xa51,428 | \u2b509.1 | \U0001f4cd位置 9.7
+20:15:45 | INFO    |     \u2713 Hotel Continental Barcelona | \xa51,546 | \u2b508.0 | \U0001f4cd位置 9.4
+20:15:45 | INFO    |     \u2713 Hotel Continental Palacete | \xa51,546 | \u2b508.5 | \U0001f4cd位置 9.6
+20:15:46 | INFO    |     \u2713 H10 Universitat | \xa51,339 | \u2b509.1 | \U0001f4cd位置 9.7
+20:15:47 | INFO    |     \u2713 Barcelona House | \xa51,062 | \u2b508.1 | \U0001f4cd位置 9.4
+20:15:47 | INFO    |     \u2713 Catalonia Diagonal Centro | \xa51,239 | \u2b508.7 | \U0001f4cd位置 9.4
+20:15:48 | INFO    |     \u2713 H10 Cubik 4* Sup | \xa51,498 | \u2b508.9 | \U0001f4cd位置 9.6
+20:15:49 | INFO    |     \u2713 Catalonia Gracia | \xa51,203 | \u2b508.5
+20:15:50 | INFO    |     \u2713 Catalonia La Boquería | \xa51,274 | \u2b508.5
+20:15:50 | INFO    |     \u2713 H10 Casanova | \xa51,465 | \u2b508.9 | \U0001f4cd位置 9.4
+20:15:50 | INFO    |     \u2717 价格过滤: Hotel Barcelona Catedral 4 Sup | \xa51,529/晚 × 3 晚 = \xa54,587 > 总预算 \xa54,500
+20:15:50 | INFO    |     \u2717 价格过滤: H10 Casa Mimosa 4* Sup | \xa51,635/晚 × 3 晚 = \xa54,905 > 总预算 \xa54,500
+20:15:50 | INFO    |     \u2717 价格过滤: H10 Madison 4* Sup | \xa51,758/晚 × 3 晚 = \xa55,274 > 总预算 \xa54,500
+20:15:50 | INFO    |     \u2717 价格过滤: Hotel Continental Barcelona | \xa51,546/晚 × 3 晚 = \xa54,638 > 总预算 \xa54,500
+20:15:50 | INFO    |     \u2717 价格过滤: Hotel Continental Palacete | \xa51,546/晚 × 3 晚 = \xa54,638 > 总预算 \xa54,500
+20:15:50 | INFO    |   \U0001f50d 价格过滤：剔除 5 条，保留 20 条 （总预算 \xa54,500 / 3 晚 = 每晚上限 \xa51,500）
+20:15:50 | INFO    | \u2713 已写入数据库 20 条记录
+20:15:50 | INFO    |   本页 20 条 | 本城累计 20 条
+20:15:50 | INFO    |   → 没有更多页面可翻
+20:15:50 | INFO    | 
+\u23f3 城市间延迟 22 秒（防反爬策略）…
+20:16:12 | INFO    |   延迟结束，继续下一个城市 \u2713
+
+20:16:12 | INFO    | 
+============================================================
+20:16:12 | INFO    |   \U0001f30d 城市 9/9: Madrid City Centre
+20:16:12 | INFO    |      2027-08-12 → 2027-08-15 | 2 成人 | 最高 \xa54500/晚
+20:16:12 | INFO    | ============================================================
+20:16:12 | INFO    | \u25b8 搜索: Madrid City Centre | 2027-08-12 → 2027-08-15 | 2 成人 | 最高 \xa54500/晚
+20:16:12 | INFO    |   搜索 URL: https://www.booking.com/searchresults.html?ss=Madrid+City+Centre&checkin=2027-08-12&checkout=2027-08-15&group_adults=2&no_rooms=1&selected_currency=CN…
+20:16:28 | INFO    |   \u2713 页面网络空闲
+20:16:28 | INFO    |   \u2713 检测到房源卡片容器
+20:16:28 | INFO    | 
+  ── 第 1/3 页 ──
+20:17:26 | INFO    |   \U0001f4c5 预订日期: 2027-08-12 → 2027-08-15
+20:17:26 | INFO    |   使用选择器 '[data-testid="property-card"]' → 检测到 26 个房源卡片
+20:17:26 | INFO    |   \U0001f50d 已保存第 1 张卡片 HTML → debug_card.html
+20:17:27 | INFO    |     \u2713 Stylish WStunning views Colon-Madrid city cen | \xa5N/A | \u2b509.1
+20:17:27 | INFO    |     \u2713 VP Jardín de Tres Cantos | \xa56,725 | \u2b508.7
+20:17:28 | INFO    |     \u2713 Be Casa - Rivas | \xa5860 | \u2b508.5
+20:17:29 | INFO    |     \u2713 Porcel Avant | \xa5431 | \u2b508.7
+20:17:29 | INFO    |     \u2713 Hostal Porcel Torrejón | \xa5361 | \u2b508.3
+20:17:30 | INFO    |     \u2713 Aparthotel Fuenlabrada Central | \xa5642 | \u2b507.8
+20:17:31 | INFO    |     \u2713 Hotel-Apartamentos Tartesos | \xa5499 | \u2b508.2
+20:17:31 | INFO    |     \u2713 TH Boadilla | \xa5595 | \u2b508.2
+20:17:32 | INFO    |     \u2713 Hotel Ciudad de Móstoles | \xa5876 | \u2b508.6
+20:17:33 | INFO    |     \u2713 Apartamentos - Mirasur | \xa5764 | \u2b509.0
+20:17:34 | INFO    |     \u2713 Be Casa - San Sebastian de los Reyes | \xa5941 | \u2b508.4
+20:17:34 | INFO    |     \u2713 Gran Hotel Los Angeles | \xa5769 | \u2b508.3
+20:17:35 | INFO    |     \u2713 Apartamentos Plaza de Santiago - Estudios Tur | \xa5527 | \u2b508.4
+20:17:36 | INFO    |     \u2713 Be Casa Alcobendas | \xa5739 | \u2b508.5
+20:17:36 | INFO    |     \u2713 Hotel Porcel Aida | \xa5392 | \u2b508.4
+20:17:37 | INFO    |     \u2713 H Los Rafaeles | \xa5299 | \u2b507.4
+20:17:38 | INFO    |     \u2713 Hotel Asset Torrejón | \xa5580 | \u2b508.8
+20:17:39 | INFO    |     \u2713 Hostal Cervantes | \xa5261 | \u2b506.4
+20:17:40 | INFO    |     \u2713 Hoteles Urbanos N Avenida de Espa\xf1a | \xa55,861 | \u2b508.2
+20:17:41 | INFO    |     \u2713 Casa de Huéspedes Mi lla | \xa56,365 | \u2b507.0
+20:17:41 | INFO    |     \u2713 Habitaciones Gran Via | \xa5975 | \u2b507.9 | \U0001f4cd位置 9.6
+20:17:42 | INFO    |     \u2713 Dobo Madrid SB204 | \xa51,259 | \u2b509.0 | \U0001f4cd位置 9.6
+20:17:43 | INFO    |     \u2713 Departamentos C&G | \xa5381 | \u2b507.0
+20:17:43 | INFO    |     \u2713 Hostal San Blas | \xa51,454 | \u2b508.6 | \U0001f4cd位置 9.4
+20:17:44 | INFO    |     \u2713 CH Las Artes de Atocha | \xa5961 | \u2b509.0 | \U0001f4cd位置 9.6
+20:17:45 | INFO    |     \u2713 La Fonda de los Príncipes | \xa51,475 | \u2b509.4 | \U0001f4cd位置 9.8
+20:17:45 | INFO    |     \u2717 价格过滤: VP Jardín de Tres Cantos | \xa56,725/晚 × 3 晚 = \xa520,175 > 总预算 \xa54,500
+20:17:45 | INFO    |     \u2717 价格过滤: Hoteles Urbanos N Avenida de Espa\xf1a | \xa55,861/晚 × 3 晚 = \xa517,583 > 总预算 \xa54,500
+20:17:45 | INFO    |     \u2717 价格过滤: Casa de Huéspedes Mi lla | \xa56,365/晚 × 3 晚 = \xa519,095 > 总预算 \xa54,500
+20:17:45 | INFO    |   \U0001f50d 价格过滤：剔除 3 条，保留 23 条 （总预算 \xa54,500 / 3 晚 = 每晚上限 \xa51,500）
+20:17:45 | INFO    | \u2713 已写入数据库 23 条记录
+20:17:45 | INFO    |   本页 23 条 | 本城累计 23 条
+20:17:45 | INFO    |   → 没有更多页面可翻
+20:17:45 | INFO    | 
+============================================================
+20:17:45 | INFO    |   \u2705 全部完成！
+20:17:45 | INFO    |   本次新增: 169 条
+20:17:45 | INFO    |   数据库总计: 169 条 → D:\europe-hotel-monitor\booking_data.db
+20:17:45 | INFO    |   覆盖城市: 9 个
+20:17:45 | INFO    | ============================================================
+20:17:45 | INFO    | \u2713 已保存 → D:\europe-hotel-monitor\booking_results.csv
+20:17:45 | INFO    | 清理资源 …
+20:17:45 | INFO    | 资源已释放
